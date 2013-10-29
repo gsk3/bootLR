@@ -34,6 +34,7 @@ medianConsistentlyOne <- function(pr, size, R, nConsistentRuns=5, warn=TRUE) {
 #' @param \dots Arguments to pass along to constraint
 #' @return The optimized input value (numeric)
 sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, tol=.Machine$double.eps ^ 0.5, verbose=FALSE, ... ) {
+  #! The alabama package or similar might be a better way of doing this in the future.
   if(verbose) cat("Grid searching between",bounds[1],"and",bounds[2],"\n")
   x <- seq( from=bounds[1], to=bounds[2], length.out=nEach )
   fx <- f( x )

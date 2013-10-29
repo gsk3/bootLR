@@ -1,2 +1,4 @@
 library(testthat)
-test_check(bootLR)
+library(bootLR)
+
+test_package("bootLR")
