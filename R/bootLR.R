@@ -151,7 +151,11 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
     posLR.ci = posLR.ci,
     inputs = structure( c( truePos, totalPos, trueNeg, totalNeg ), names=c("truePos","totalPos","trueNeg","totalNeg") ),
     statistics = cs[ , c("sens","spec") ]
-  ), class="lrtest" )
+  ), 
+  class = "lrtest",
+  ci.type = "BCa",
+  ci.width = .95
+  )
 }
 
 #' Internal function to draw a set of sensitivities or specificities
@@ -187,4 +191,26 @@ bca <- function( t, t0, ... ) {
   dummyb$t <- matrix(t,ncol=1)
   dummyb$t0 <- t0
   boot.ci(dummyb, t0=dummyb$t0, t=dummyb$t, type=c("perc", "bca"), ...)
+}
+
+# ----- Functions to display the resulting lrtest object ----- #
+
+#' Prints results from the BayesianLR.test
+#' @param x The lrtest object created by BayesianLR.test
+#' @param \dots Pass-alongs (currently ignored)
+#' @return Returns x unaltered
+#' @method print lrtest
+#' @S3method print lrtest
+#' @export print.lrtest
+print.lrtest <- function( x, ... ) {
+  digits <- 2 # Number of digits to round to for display purposes
+  cat("\n")
+  cat("Likelihood ratio test of a 2x2 table")
+  cat("\n\n")
+  cat("data:\n")
+  print(x$inputs)
+  cat( paste0( "Positive LR: ", round(x$posLR,digits), " (", round(x$posLR.ci[1],digits), " - ", round(x$posLR.ci[2],digits), ")\n" ) )
+  cat( paste0( "Negative LR: ", round(x$negLR,digits), " (", round(x$negLR.ci[1],digits), " - ", round(x$negLR.ci[2],digits), ")\n" ) )
+  cat( paste0( attr(x,"ci.width")*100, "% confidence intervals computed via ", attr(x,"ci.type"), " bootstrapping." ) )
+  invisible(x)
 }
