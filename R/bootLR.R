@@ -1,4 +1,24 @@
+# ----- Single-valued calculations ----- #
 
+#' Compute sensitivity, specificity, positive likelihood ratio, negative likelihood ratio for a single 2x2 table
+#' @param truePos The number of true positive tests
+#' @param totalPos The total number of positives ("sick") in the population
+#' @param trueNeg The number of true negatives in the population
+#' @param totalNeg The total number of negatives ("well") in the population
+#' @return A matrix containing sensitivity, specificity, posLR, negLR results
+#' @references Deeks JJ, Altman DG. BMJ. 2004 July 17; 329(7458): 168–169.
+confusionStatistics <- function( truePos, totalPos, trueNeg, totalNeg ) {
+  n <- length(truePos)
+  res <- matrix( NA, ncol=4, nrow=n )
+  colnames(res) <- c("sens","spec","posLR","negLR")
+  res[,"sens"] <- truePos / totalPos
+  res[,"spec"] <- trueNeg / totalNeg
+  res[,"posLR"] <- res[,"sens"] / ( 1 - res[,"spec"] )
+  res[,"negLR"] <- ( 1 - res[,"sens"] ) / res[,"spec"]
+  res
+}
+
+# ----- Optimization tools ----- #
 
 #' Find the lowest population probability whose median is consistently one
 #' This is the lowest estimate for Sens that is consistently (over 5 runs) most likely to yield a sample estimate of 100/100.
@@ -59,45 +79,88 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
   }
 }
 
+# ----- Main function and its helpers ----- #
+
 #' Compute the (negative) likelihood ratio with appropriate, bootstrapped confidence intervals
 #' @param truePos The number of true positive tests
 #' @param totalPos The total number of positives ("sick") in the population
 #' @param trueNeg The number of true negatives in the population
 #' @param totalNeg The total number of negatives ("well") in the population
-#' @param R is the number of replications in each round of the bootstrap
+#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater)
 #' @param verbose Whether to display internal operations as they happen
-#' @return An object of class nlrtest
+#' @return An object of class lrtest
 #' @export BayesianLR.test
 #' @example
-#' truePos <- 100
-#' totalPos <- 100
-#' trueNeg <- 60
-#' totalNeg <- 100
-#' nlr <- BayesianLR.test( truePos=truePos, totalPos=totalPos, trueNeg=trueNeg, totalNeg=totalNeg )
-#' nlr
-#' summary(nlr)
+#' blrt <- BayesianLR.test( truePos=100, totalPos=100, trueNeg=60, totalNeg=100 )
+#' blrt <- BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=100 )
+#' blrt
+#' summary(blrt)
 BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE ) {
   # -- Check inputs -- #
-  if( R!=5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
-  
-  # -- Determine version of algorithm to run -- #
-  
+  if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
   
   # -- Computations -- #
+  cs <- confusionStatistics( truePos=truePos, totalPos=totalPos, trueNeg=trueNeg, totalNeg=totalNeg )
   
-  # - Find lowest probability that consistently produces 1's - #
+  bootmean <- function(x,i)  mean(x[i])
   
-  lprb <- sequentialGridSearch( 
+  if( truePos==totalPos ) {
+    sensb <- drawMaxedOutSens( totalPos=totalPos, R=R, verbose=verbose )
+    cs[,"sens"] <- attr(sensb,"lprb") #! Why is this lprb--that's the lower bound of sensitivity not the central tendency?
+  } else {
+    sensb <- boot(
+      rep( 1:0, c( truePos, totalPos-truePos ) ), 
+      bootmean, 
+      R=R
+    )$t
+  }
+  
+  specb <- boot(
+    rep( 1:0, c( trueNeg, totalNeg-trueNeg ) ), 
+    bootmean, 
+    R=R
+  )$t
+  
+  
+  negLR <- ( 1 - cs[,"sens"] ) / cs[,"spec"] 
+  posLR <- cs[,"sens"] / ( 1 - cs[,"spec"] )
+  structure( list(
+    negLR = negLR,
+    negLR.ci = bca( ( 1 - sensb) / specb, negLR ),
+    posLR = posLR,
+    posLR.ci = bca( sensb / ( 1 - specb ), posLR )
+  ), class="lrtest" )
+}
+
+#' Internal function to draw a set of sensitivities (inverted for specificities)
+#' This is intended for the case where testPos == totalPos
+#' @param totalPos The total number of positives ("sick") in the population
+#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater)
+#' @param verbose Whether to display internal operations as they happen
+drawMaxedOutSens <- function( totalPos, R, verbose ) {
+  lprb <- sequentialGridSearch( # lowest probability that consistently produces 1's 
     f=identity, # We just want to minimize pr
     constraint=function(probs,...) vapply( probs, FUN=medianConsistentlyOne, FUN.VALUE=NA, ... ),
     bounds=c(0,1), 
     verbose=verbose,
     size=totalPos, R=R, warn=FALSE
   )
-  
-  
-  
+  res <- rbinom(R, size=totalPos, prob=lprb)/totalPos
+  attr( res, "lprb" ) <- lprb
+  res
 }
 
-
-
+#' Internal function to analyze LR bootstrap finding median, and standard and
+#' BCa percentile 95% CIs
+#' To obtain bca CI on a non-boot result, use a dummy boot
+#' and replace t and t0 with the results of interest.
+#' @param t The vector to obtain a BCa bootstrap for (e.g. nlr)
+#' @param t0 The central value of the vector (e.g. the )
+bca <- function( t, t0 ) {
+  R <- length(t)
+  dummy <- rep(1:0,c(5,5)) # Doesn't matter what values are given here, since we're replacing them
+  dummyb <- boot(dummy, function(x,i) 1, R=R)
+  dummyb$t <- matrix(t,ncol=1)
+  dummyb$t0 <- t0
+  boot.ci(dummyb, t0=dummyb$t0, t=dummyb$t, type=c("perc", "bca"))
+}
