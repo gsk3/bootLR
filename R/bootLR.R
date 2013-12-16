@@ -88,24 +88,27 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param totalNeg The total number of negatives ("well") in the population
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater)
 #' @param verbose Whether to display internal operations as they happen
+#' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals
 #' @return An object of class lrtest
 #' @export BayesianLR.test
 #' @example
 #' blrt <- BayesianLR.test( truePos=100, totalPos=100, trueNeg=60, totalNeg=100 )
-#' blrt <- BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=100 )
 #' blrt
 #' summary(blrt)
-BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE ) {
+#' BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=100 )
+#' BayesianLR.test( truePos=60, totalPos=100, trueNeg=100, totalNeg=100 )
+#' BayesianLR.test( truePos=60, totalPos=100, trueNeg=99, totalNeg=100 )
+BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, ... ) {
   # -- Check inputs -- #
   if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
   
-  # -- Computations -- #
+  # -- Bootstrap sensitivity and specificity -- #
   cs <- confusionStatistics( truePos=truePos, totalPos=totalPos, trueNeg=trueNeg, totalNeg=totalNeg )
   
   bootmean <- function(x,i)  mean(x[i])
   
-  if( truePos==totalPos ) {
-    sensb <- drawMaxedOutSens( totalPos=totalPos, R=R, verbose=verbose )
+  if( truePos == totalPos ) {
+    sensb <- drawMaxedOut( n=totalPos, R=R, verbose=verbose )
     cs[,"sens"] <- attr(sensb,"lprb") #! Why is this lprb--that's the lower bound of sensitivity not the central tendency?
   } else {
     sensb <- boot(
@@ -115,40 +118,60 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
     )$t
   }
   
-  specb <- boot(
-    rep( 1:0, c( trueNeg, totalNeg-trueNeg ) ), 
-    bootmean, 
-    R=R
-  )$t
+  if( trueNeg == totalNeg ) {
+    specb <- drawMaxedOut( n=totalNeg, R=R, verbose=verbose )
+    cs[,"spec"] <- attr(specb,"lprb")
+  } else {
+    specb <- boot(
+      rep( 1:0, c( trueNeg, totalNeg-trueNeg ) ), 
+      bootmean, 
+      R=R
+    )$t
+  }
   
+  # -- Compute pos/neg LRs and their BCa confidence intervals -- #
+  negLR <- unname( ( 1 - cs[,"sens"] ) / cs[,"spec"]  )
+  if( all( specb != 0L ) ) {
+    negLR.ci <- bca( ( 1 - sensb) / specb, negLR, ... )$bca[4:5]
+  } else {
+    negLR.ci <- 1/bca( specb / ( 1 - sensb), 1/negLR, ... )$bca[4:5]
+  }
+  posLR <- unname( cs[,"sens"] / ( 1 - cs[,"spec"] ) )
+  if( all( specb != 1L ) ) {
+    posLR.ci <- bca( sensb / ( 1 - specb ), posLR, ... )$bca[4:5]
+  } else {
+    posLR.ci <- 1/bca( ( 1 - specb ) / sensb, 1/posLR, ... )$bca[4:5]
+  }
   
-  negLR <- ( 1 - cs[,"sens"] ) / cs[,"spec"] 
-  posLR <- cs[,"sens"] / ( 1 - cs[,"spec"] )
+  # -- Return lrtest object -- #
   structure( list(
     negLR = negLR,
-    negLR.ci = bca( ( 1 - sensb) / specb, negLR ),
+    negLR.ci = negLR.ci,
     posLR = posLR,
-    posLR.ci = bca( sensb / ( 1 - specb ), posLR )
+    posLR.ci = posLR.ci,
+    inputs = structure( c( truePos, totalPos, trueNeg, totalNeg ), names=c("truePos","totalPos","trueNeg","totalNeg") ),
+    statistics = cs[ , c("sens","spec") ]
   ), class="lrtest" )
 }
 
-#' Internal function to draw a set of sensitivities (inverted for specificities)
-#' This is intended for the case where testPos == totalPos
-#' @param totalPos The total number of positives ("sick") in the population
+#' Internal function to draw a set of sensitivities or specificities
+#' This is intended for the case where testPos == totalPos or testNeg == totalNeg
+#' @param n The total number of positives/negatives in the population
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater)
 #' @param verbose Whether to display internal operations as they happen
-drawMaxedOutSens <- function( totalPos, R, verbose ) {
+drawMaxedOut <- function( n, R, verbose ) {
   lprb <- sequentialGridSearch( # lowest probability that consistently produces 1's 
     f=identity, # We just want to minimize pr
     constraint=function(probs,...) vapply( probs, FUN=medianConsistentlyOne, FUN.VALUE=NA, ... ),
     bounds=c(0,1), 
     verbose=verbose,
-    size=totalPos, R=R, warn=FALSE
+    size=n, R=R, warn=FALSE
   )
-  res <- rbinom(R, size=totalPos, prob=lprb)/totalPos
+  res <- rbinom(R, size=n, prob=lprb)/n
   attr( res, "lprb" ) <- lprb
   res
 }
+
 
 #' Internal function to analyze LR bootstrap finding median, and standard and
 #' BCa percentile 95% CIs
@@ -156,11 +179,12 @@ drawMaxedOutSens <- function( totalPos, R, verbose ) {
 #' and replace t and t0 with the results of interest.
 #' @param t The vector to obtain a BCa bootstrap for (e.g. nlr)
 #' @param t0 The central value of the vector (e.g. the )
-bca <- function( t, t0 ) {
+#' @param \dots Pass-alongs to boot.ci
+bca <- function( t, t0, ... ) {
   R <- length(t)
   dummy <- rep(1:0,c(5,5)) # Doesn't matter what values are given here, since we're replacing them
   dummyb <- boot(dummy, function(x,i) 1, R=R)
   dummyb$t <- matrix(t,ncol=1)
   dummyb$t0 <- t0
-  boot.ci(dummyb, t0=dummyb$t0, t=dummyb$t, type=c("perc", "bca"))
+  boot.ci(dummyb, t0=dummyb$t0, t=dummyb$t, type=c("perc", "bca"), ...)
 }
