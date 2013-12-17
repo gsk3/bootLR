@@ -102,6 +102,7 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
   # -- Check inputs -- #
   if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
   if( totalPos == 0 | totalNeg == 0 ) stop("This package may seem like magic, but not even magic will solve your problem (totalPos or totalNeg = 0).")
+  if( trueNeg > totalNeg | truePos > totalPos ) stop("You cannot have more test positive/negative than you have total positive/negative.")
   
   # -- Bootstrap sensitivity and specificity -- #
   cs <- confusionStatistics( truePos=truePos, totalPos=totalPos, trueNeg=trueNeg, totalNeg=totalNeg )
