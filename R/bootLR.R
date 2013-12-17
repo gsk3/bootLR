@@ -106,6 +106,7 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
   
   # -- Bootstrap sensitivity and specificity -- #
   cs <- confusionStatistics( truePos=truePos, totalPos=totalPos, trueNeg=trueNeg, totalNeg=totalNeg )
+  csExact <- cs
   
   bootmean <- function(x,i)  mean(x[i])
   
@@ -133,23 +134,25 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
   
   # -- Compute pos/neg LRs and their BCa confidence intervals -- #
   negLR <- unname( ( 1 - cs[,"sens"] ) / cs[,"spec"]  )
+  negLRexact <- unname( ( 1-csExact[,"sens"] ) / csExact[,"spec"] )
   if( all( specb != 0L ) ) {
     negLR.ci <- bca( ( 1 - sensb) / specb, negLR, ... )$bca[4:5]
   } else {
-    negLR.ci <- 1/bca( specb / ( 1 - sensb), 1/negLR, ... )$bca[4:5]
+    negLR.ci <- 1/bca( specb / ( 1 - sensb), 1/negLR, ... )$bca[c(4,5)]
   }
   posLR <- unname( cs[,"sens"] / ( 1 - cs[,"spec"] ) )
+  posLRexact <- unname( csExact[,"sens"] / ( 1 - csExact[,"spec"] ) )
   if( all( specb != 1L ) ) {
     posLR.ci <- bca( sensb / ( 1 - specb ), posLR, ... )$bca[4:5]
   } else {
-    posLR.ci <- 1/bca( ( 1 - specb ) / sensb, 1/posLR, ... )$bca[4:5]
+    posLR.ci <- 1/bca( ( 1 - specb ) / sensb, 1/posLR, ... )$bca[c(5,4)] # Reversed because the order inverts when you take the reciprocal
   }
   
   # -- Return lrtest object -- #
   structure( list(
-    negLR = negLR,
+    negLR = negLRexact,
     negLR.ci = negLR.ci,
-    posLR = posLR,
+    posLR = posLRexact,
     posLR.ci = posLR.ci,
     inputs = structure( c( truePos, totalPos, trueNeg, totalNeg ), names=c("truePos","totalPos","trueNeg","totalNeg") ),
     statistics = cs[ , c("sens","spec") ]
@@ -171,7 +174,10 @@ drawMaxedOut <- function( n, R, verbose ) {
     constraint=function(probs,...) vapply( probs, FUN=medianConsistentlyOne, FUN.VALUE=NA, ... ),
     bounds=c(0,1), 
     verbose=verbose,
-    size=n, R=R, warn=FALSE
+    size=n, R=R, warn=FALSE,
+    shrink=5,
+    tol=.0005,
+    nEach=80
   )
   res <- rbinom(R, size=n, prob=lprb)/n
   attr( res, "lprb" ) <- lprb
