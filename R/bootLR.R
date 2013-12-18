@@ -36,7 +36,7 @@ confusionStatistics <- function( truePos, totalPos, trueNeg, totalNeg ) {
 #' }
 medianConsistentlyOne <- function(pr, size, R, nConsistentRuns=5, warn=TRUE) {
   if( 0 > pr | pr > 1) {
-    warning("Searching probabilities outside of 0,1. Returning FALSE.")
+    if(warn)  warning("Searching probabilities outside of 0,1. Returning FALSE.")
     return( FALSE )
   } else {
     reps <- replicate( nConsistentRuns, median( rbinom(R, size=size, prob=pr) ) )
@@ -221,6 +221,7 @@ print.lrtest <- function( x, ... ) {
   print(x$inputs)
   cat( paste0( "Positive LR: ", round(x$posLR,digits), " (", round(x$posLR.ci[1],digits), " - ", round(x$posLR.ci[2],digits), ")\n" ) )
   cat( paste0( "Negative LR: ", round(x$negLR,digits), " (", round(x$negLR.ci[1],digits), " - ", round(x$negLR.ci[2],digits), ")\n" ) )
-  cat( paste0( attr(x,"ci.width")*100, "% confidence intervals computed via ", attr(x,"ci.type"), " bootstrapping." ) )
+  cat( paste0( attr(x,"ci.width")*100, "% confidence intervals computed via ", attr(x,"ci.type"), " bootstrapping.\n" ) )
+  cat( "Note: This procedure depends on repeated random sampling.  As such it is subject to some variability in results.  Variability is minimized by large numbers of replications (generally 50,000) [and averaging 5 repeated results], but with small sample sizes or sensitivity or specificity near 0 or 1, variability becomes more pronounced.  This is not an error, it is a function of the nature of the procedure." )
   invisible(x)
 }
