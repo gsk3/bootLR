@@ -6,7 +6,7 @@
 #' @param trueNeg The number of true negatives in the population
 #' @param totalNeg The total number of negatives ("well") in the population
 #' @return A matrix containing sensitivity, specificity, posLR, negLR results
-#' @references Deeks JJ, Altman DG. BMJ. 2004 July 17; 329(7458): 168–169.
+#' @references Deeks JJ, Altman DG. BMJ. 2004 July 17; 329(7458): 168-169.
 confusionStatistics <- function( truePos, totalPos, trueNeg, totalNeg ) {
   n <- length(truePos)
   res <- matrix( NA, ncol=4, nrow=n )
@@ -28,10 +28,12 @@ confusionStatistics <- function( truePos, totalPos, trueNeg, totalNeg ) {
 #' @param nConsistentRuns Number of runs that all have to be identical to return TRUE
 #' @param warn Warn if searching outside of the range c(0,1)
 #' @return Boolean of length one (TRUE or FALSE)
-#' @example
+#' @examples
+#' \dontrun{
 #' prs <- seq(.990,.995,.0001)
 #' bools <- sapply( prs, medianConsistentlyOne, size=truePos, R=R )
 #' data.frame( prs, bools )
+#' }
 medianConsistentlyOne <- function(pr, size, R, nConsistentRuns=5, warn=TRUE) {
   if( 0 > pr | pr > 1) {
     warning("Searching probabilities outside of 0,1. Returning FALSE.")
@@ -91,7 +93,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals
 #' @return An object of class lrtest
 #' @export BayesianLR.test
-#' @example
+#' @examples
 #' blrt <- BayesianLR.test( truePos=100, totalPos=100, trueNeg=60, totalNeg=100 )
 #' blrt
 #' summary(blrt)
@@ -211,7 +213,7 @@ bca <- function( t, t0, ... ) {
 #' @S3method print lrtest
 #' @export print.lrtest
 print.lrtest <- function( x, ... ) {
-  digits <- 2 # Number of digits to round to for display purposes
+  digits <- 3 # Number of digits to round to for display purposes
   cat("\n")
   cat("Likelihood ratio test of a 2x2 table")
   cat("\n\n")
