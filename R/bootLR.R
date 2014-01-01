@@ -108,13 +108,13 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
   
   # -- Bootstrap sensitivity and specificity -- #
   cs <- confusionStatistics( truePos=truePos, totalPos=totalPos, trueNeg=trueNeg, totalNeg=totalNeg )
-  csExact <- cs
+  csExact <- cs # store the actual confusion statistics, since we will use the lprb as a proxy for them at various points but we still want to report the real numbers at the end
   
   bootmean <- function(x,i)  mean(x[i])
   
   if( truePos == totalPos ) {
     sensb <- drawMaxedOut( n=totalPos, R=R, verbose=verbose )
-    cs[,"sens"] <- attr(sensb,"lprb") #! Why is this lprb--that's the lower bound of sensitivity not the central tendency?
+    cs[,"sens"] <- attr(sensb,"lprb")
   } else {
     sensb <- boot(
       rep( 1:0, c( truePos, totalPos-truePos ) ), 
@@ -136,7 +136,7 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
   
   # -- Compute pos/neg LRs and their BCa confidence intervals -- #
   negLR <- unname( ( 1 - cs[,"sens"] ) / cs[,"spec"]  )
-  negLRexact <- unname( ( 1-csExact[,"sens"] ) / csExact[,"spec"] )
+  negLRexact <- unname( ( 1-csExact[,"sens"] ) / csExact[,"spec"] ) # Could also just use csExact[,"negLR"] here, but not in the line above it
   if( all( specb != 0L ) ) {
     negLR.ci <- bca( ( 1 - sensb) / specb, negLR, ... )$bca[4:5]
   } else {

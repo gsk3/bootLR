@@ -1,0 +1,23 @@
+\name{drawMaxedOut}
+\alias{drawMaxedOut}
+\title{Internal function to draw a set of sensitivities or specificities
+This is intended for the case where testPos == totalPos or testNeg == totalNeg}
+\usage{
+  drawMaxedOut(n, R, verbose)
+}
+\arguments{
+  \item{n}{The total number of positives/negatives in the
+  population}
+
+  \item{R}{is the number of replications in each round of
+  the bootstrap (has been tested at 50,000 or greater)}
+
+  \item{verbose}{Whether to display internal operations as
+  they happen}
+}
+\description{
+  Internal function to draw a set of sensitivities or
+  specificities This is intended for the case where testPos
+  == totalPos or testNeg == totalNeg
+}
+
