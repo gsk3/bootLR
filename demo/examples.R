@@ -27,7 +27,8 @@ cat( "The positive likelihood ratio was", blrt$posLR, "with a confidence interva
 
 lrciStability <- apply( testParameters, 2, function( x, n) {
   cat('Running model for:',x,"\n")
-  replicate( n=n, 
-    unlist( BayesianLR.test( truePos=x[1], totalPos=x[2], trueNeg=x[3], totalNeg=x[4], verbose=TRUE ) )
-  )
+  replicate( n=n, {
+    blrt <- BayesianLR.test( truePos=x[1], totalPos=x[2], trueNeg=x[3], totalNeg=x[4], verbose=TRUE )
+    with( blrt, c( posLR.ci, negLR.ci ) )
+  })
 }, n=7 ) # n is number of times to run each set of parameters to examine stability of results

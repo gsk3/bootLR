@@ -90,6 +90,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param totalNeg The total number of negatives ("well") in the population
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater)
 #' @param verbose Whether to display internal operations as they happen
+#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals
 #' @return An object of class lrtest
 #' @export BayesianLR.test
@@ -100,7 +101,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=100 )
 #' BayesianLR.test( truePos=60, totalPos=100, trueNeg=100, totalNeg=100 )
 #' BayesianLR.test( truePos=60, totalPos=100, trueNeg=99, totalNeg=100 )
-BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, ... ) {
+BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
   # -- Check inputs -- #
   if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
   if( totalPos == 0 | totalNeg == 0 ) stop("This package may seem like magic, but not even magic will solve your problem (totalPos or totalNeg = 0).")
@@ -124,7 +125,7 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
   }
   
   if( trueNeg == totalNeg ) {
-    specb <- drawMaxedOut( n=totalNeg, R=R, verbose=verbose )
+    specb <- drawMaxedOut( n=totalNeg, R=R, verbose=verbose, parameters=parameters )
     cs[,"spec"] <- attr(specb,"lprb")
   } else {
     specb <- boot(
@@ -170,16 +171,17 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
 #' @param n The total number of positives/negatives in the population
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater)
 #' @param verbose Whether to display internal operations as they happen
-drawMaxedOut <- function( n, R, verbose ) {
+#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search
+drawMaxedOut <- function( n, R, verbose, parameters=list(shrink=5,tol=.0005,nEach=80) ) {
   lprb <- sequentialGridSearch( # lowest probability that consistently produces 1's 
     f=identity, # We just want to minimize pr
     constraint=function(probs,...) vapply( probs, FUN=medianConsistentlyOne, FUN.VALUE=NA, ... ),
     bounds=c(0,1), 
     verbose=verbose,
     size=n, R=R, warn=FALSE,
-    shrink=5,
-    tol=.0005,
-    nEach=80
+    shrink=parameters$shrink,
+    tol=parameters$tol,
+    nEach=parameters$nEach
   )
   res <- rbinom(R, size=n, prob=lprb)/n
   attr( res, "lprb" ) <- lprb

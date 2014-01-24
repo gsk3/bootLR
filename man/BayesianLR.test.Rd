@@ -3,7 +3,9 @@
 \title{Compute the (negative) likelihood ratio with appropriate, bootstrapped confidence intervals}
 \usage{
   BayesianLR.test(truePos, totalPos, trueNeg, totalNeg,
-    R = 5 * 10^4, verbose = FALSE, ...)
+    R = 5 * 10^4, verbose = FALSE,
+    parameters = list(shrink = 5, tol = 5e-04, nEach = 80),
+    ...)
 }
 \arguments{
   \item{truePos}{The number of true positive tests}
@@ -22,6 +24,9 @@
 
   \item{verbose}{Whether to display internal operations as
   they happen}
+
+  \item{parameters}{List of control parameters (shrink,
+  tol, nEach) for sequential grid search}
 
   \item{\dots}{Arguments to pass along to boot.ci for the
   BCa confidence intervals}
