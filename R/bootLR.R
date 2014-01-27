@@ -1,12 +1,16 @@
 # ----- Single-valued calculations ----- #
 
 #' Compute sensitivity, specificity, positive likelihood ratio, negative likelihood ratio for a single 2x2 table
-#' @param truePos The number of true positive tests
-#' @param totalPos The total number of positives ("sick") in the population
-#' @param trueNeg The number of true negatives in the population
-#' @param totalNeg The total number of negatives ("well") in the population
-#' @return A matrix containing sensitivity, specificity, posLR, negLR results
+#' @param truePos The number of true positive tests.
+#' @param totalPos The total number of positives ("sick") in the population.
+#' @param trueNeg The number of true negatives in the population.
+#' @param totalNeg The total number of negatives ("well") in the population.
+#' @return A one-row matrix containing sensitivity, specificity, posLR, negLR results.
 #' @references Deeks JJ, Altman DG. BMJ. 2004 July 17; 329(7458): 168-169.
+#' @examples
+#' \dontrun{
+#' confusionStatistics( 25, 50, 45, 75 )
+#' }
 confusionStatistics <- function( truePos, totalPos, trueNeg, totalNeg ) {
   n <- length(truePos)
   res <- matrix( NA, ncol=4, nrow=n )
@@ -21,13 +25,13 @@ confusionStatistics <- function( truePos, totalPos, trueNeg, totalNeg ) {
 # ----- Optimization tools ----- #
 
 #' Find the lowest population probability whose median is consistently one
-#' This is the lowest estimate for Sens that is consistently (over 5 runs) most likely to yield a sample estimate of 100/100.
-#' @param pr Probability input
-#' @param size Number of trials
-#' @param R number of bootstrap replications
-#' @param nConsistentRuns Number of runs that all have to be identical to return TRUE
-#' @param warn Warn if searching outside of the range c(0,1)
-#' @return Boolean of length one (TRUE or FALSE)
+#' This is the lowest estimate for Sens that is consistently (over 5 runs) most likely to yield a sample estimate that is all 1's (e.g. 100/100, etc.).
+#' @param pr Probability input.
+#' @param size Number of trials.
+#' @param R number of bootstrap replications.
+#' @param nConsistentRuns Number of runs that all have to be identical to return TRUE.
+#' @param warn Warn if searching outside of the range c(0,1).
+#' @return Boolean of length one (TRUE or FALSE).
 #' @examples
 #' \dontrun{
 #' prs <- seq(.990,.995,.0001)
@@ -45,16 +49,16 @@ medianConsistentlyOne <- function(pr, size, R, nConsistentRuns=5, warn=TRUE) {
 }
 
 #' Optimize a function returning a single numeric value subject to a boolean constraint
-#' Utilizes a naive recursive grid search
-#' @param f Function to be minimized: takes a single numeric value and returns a single numeric value
-#' @param constraint Function of a single variable returning a single boolean value (must be TRUE to be at the optimum)
-#' @param bounds A numeric vector of length two which are the upper and lower bounds of the input to try
-#' @param nEach Number of points n each round of grid searching to use
-#' @param shrink Factor indicating how much (1/shrink) to narrow the search width by each round. Highly recommended that shrink is at least half the size of nEach.
-#' @param tol The tolerance (epsilon)
-#' @param verbose Whether to display verbose output
-#' @param \dots Arguments to pass along to constraint
-#' @return The optimized input value (numeric)
+#' Utilizes a naive recursive grid search.
+#' @param f Function to be minimized: takes a single numeric value and returns a single numeric value.
+#' @param constraint Function of a single variable returning a single boolean value (must be TRUE to be at the optimum).
+#' @param bounds A numeric vector of length two which are the upper and lower bounds of the input to try.
+#' @param nEach Number of points n each round of grid searching to use.
+#' @param shrink Factor indicating how much (1/shrink) to narrow the search width by each round; highly recommended that shrink is at least half the size of nEach.
+#' @param tol The tolerance (epsilon).
+#' @param verbose Whether to display verbose output.
+#' @param \dots Arguments to pass along to constraint.
+#' @return The optimized input value (numeric).
 sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, tol=.Machine$double.eps ^ 0.5, verbose=FALSE, ... ) {
   #! The alabama package or similar might be a better way of doing this in the future.
   if(verbose) cat("Grid searching between",bounds[1],"and",bounds[2],"\n")
@@ -84,23 +88,29 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 # ----- Main function and its helpers ----- #
 
 #' Compute the (negative) likelihood ratio with appropriate, bootstrapped confidence intervals
-#' @param truePos The number of true positive tests
-#' @param totalPos The total number of positives ("sick") in the population
-#' @param trueNeg The number of true negatives in the population
-#' @param totalNeg The total number of negatives ("well") in the population
-#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater)
-#' @param verbose Whether to display internal operations as they happen
-#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search
-#' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals
-#' @return An object of class lrtest
+#' @param truePos The number of true positive tests.
+#' @param totalPos The total number of positives ("sick") in the population.
+#' @param trueNeg The number of true negatives in the population.
+#' @param totalNeg The total number of negatives ("well") in the population.
+#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
+#' @param verbose Whether to display internal operations as they happen.
+#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
+#' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
+#' @return An object of class lrtest.
 #' @export BayesianLR.test
 #' @examples
 #' blrt <- BayesianLR.test( truePos=100, totalPos=100, trueNeg=60, totalNeg=100 )
 #' blrt
 #' summary(blrt)
+#' \dontrun{
 #' BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=100 )
 #' BayesianLR.test( truePos=60, totalPos=100, trueNeg=100, totalNeg=100 )
 #' BayesianLR.test( truePos=60, totalPos=100, trueNeg=99, totalNeg=100 )
+#' # Note the argument names are not necessary if you specify them in the proper order:
+#' BayesianLR.test( 60, 100, 50, 50 ) 
+#' # You can specify R= to increase the number of bootstrap replications
+#' BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
+#' }
 BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
   # -- Check inputs -- #
   if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
@@ -167,11 +177,11 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
 }
 
 #' Internal function to draw a set of sensitivities or specificities
-#' This is intended for the case where testPos == totalPos or testNeg == totalNeg
-#' @param n The total number of positives/negatives in the population
-#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater)
-#' @param verbose Whether to display internal operations as they happen
-#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search
+#' This is intended for the case where testPos == totalPos or testNeg == totalNeg.
+#' @param n The total number of positives/negatives in the population.
+#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
+#' @param verbose Whether to display internal operations as they happen.
+#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
 drawMaxedOut <- function( n, R, verbose, parameters=list(shrink=5,tol=.0005,nEach=80) ) {
   lprb <- sequentialGridSearch( # lowest probability that consistently produces 1's 
     f=identity, # We just want to minimize pr
@@ -190,12 +200,12 @@ drawMaxedOut <- function( n, R, verbose, parameters=list(shrink=5,tol=.0005,nEac
 
 
 #' Internal function to analyze LR bootstrap finding median, and standard and
-#' BCa percentile 95% CIs
-#' To obtain bca CI on a non-boot result, use a dummy boot
+#' BCa percentile 95% CIs.
+#' To obtain bca CI on a non-boot result, use a dummy boot.
 #' and replace t and t0 with the results of interest.
-#' @param t The vector to obtain a BCa bootstrap for (e.g. nlr)
-#' @param t0 The central value of the vector (e.g. the )
-#' @param \dots Pass-alongs to boot.ci
+#' @param t The vector to obtain a BCa bootstrap for (e.g. nlr).
+#' @param t0 The central value of the vector (e.g. the ).
+#' @param \dots Pass-alongs to boot.ci.
 bca <- function( t, t0, ... ) {
   R <- length(t)
   dummy <- rep(1:0,c(5,5)) # Doesn't matter what values are given here, since we're replacing them
@@ -208,9 +218,10 @@ bca <- function( t, t0, ... ) {
 # ----- Functions to display the resulting lrtest object ----- #
 
 #' Prints results from the BayesianLR.test
-#' @param x The lrtest object created by BayesianLR.test
-#' @param \dots Pass-alongs (currently ignored)
-#' @return Returns x unaltered
+#' As is typical for R, this is run automatically when you type in an object name, and is typically not run directly by the end-user.
+#' @param x The lrtest object created by BayesianLR.test.
+#' @param \dots Pass-alongs (currently ignored).
+#' @return Returns x unaltered.
 #' @method print lrtest
 #' @S3method print lrtest
 #' @export print.lrtest
@@ -224,6 +235,6 @@ print.lrtest <- function( x, ... ) {
   cat( paste0( "Positive LR: ", round(x$posLR,digits), " (", round(x$posLR.ci[1],digits), " - ", round(x$posLR.ci[2],digits), ")\n" ) )
   cat( paste0( "Negative LR: ", round(x$negLR,digits), " (", round(x$negLR.ci[1],digits), " - ", round(x$negLR.ci[2],digits), ")\n" ) )
   cat( paste0( attr(x,"ci.width")*100, "% confidence intervals computed via ", attr(x,"ci.type"), " bootstrapping.\n" ) )
-  cat( "Note: This procedure depends on repeated random sampling.  As such it is subject to some variability in results.  Variability is minimized by large numbers of replications (generally 50,000) [and averaging 5 repeated results], but with small sample sizes or sensitivity or specificity near 0 or 1, variability becomes more pronounced.  This is not an error, it is a function of the nature of the procedure." )
+  cat( "Note: This procedure depends on repeated random sampling.  As such it is subject to some variability in results.\n  Variability is minimized by large numbers of replications (generally 50,000) [and averaging 5 repeated results],\n but with small sample sizes or sensitivity or specificity near 0 or 1, variability becomes more pronounced.\n  This is not an error, it is a function of the nature of the procedure." )
   invisible(x)
 }

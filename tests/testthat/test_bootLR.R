@@ -14,12 +14,6 @@
 # expect_that(x, gives_warning(y)) 	expect_warning(x, y)
 # expect_that(x, throws_error(y)) 	expect_error(x, y)
 
-context( "Output is as expected" )
-
-test_that( "Sens 100/100 and Spec 60/100", {
-  
-} )
-
 context( "Inputs are validated" )
 
 test_that( "totalNeg or totalPos == 0", {
@@ -34,4 +28,11 @@ test_that( "trueNeg or truePos greater than than totalNeg or totalPos", {
 } )
 
 
-test_that("dummy test", { expect_true(FALSE) } )
+
+context( "Output is as expected" )
+
+test_that( "Sens 100/100 and Spec 60/100", {
+  set.seed(1235425)
+  res <- BayesianLR.test( truePos=100, totalPos=100, trueNeg=60, totalNeg=100 )
+  expect_true( res$negLR.ci[2] < 0.0564 & res$negLR.ci[2] >0.0404 )
+} )

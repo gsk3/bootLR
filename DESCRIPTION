@@ -14,5 +14,7 @@ License: LGPL-2.1
 LazyData: TRUE
 Depends:
     boot
+Suggests:
+    testthat
 Collate:
     'bootLR.R'
