@@ -112,6 +112,31 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
 #' }
 BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
+  maxTries <- 10
+  res <- structure(NULL,class="try-error")
+  tries <- 1
+  while( class(res) == "try-error"  &  tries < maxTries ) {
+    res <- try( run.BayesianLR.test(truePos, totalPos, trueNeg, totalNeg, R, verbose, parameters) )
+    parameters$tol <- parameters$tol * 2
+    parameters$shrink <- (parameters$shrink - 1) * .75 + 1
+    parameters$nEach <- parameters$nEach + 40
+    tries <- tries + 1
+    if( verbose )  message("Failed to reach convergence in trial number ", tries-1, ".\nRunning trial number ", tries, " to see if we can reach convergence. New parameters: \nShrink ", parameters$shrink, "\nTolerance ", parameters$tol, "\nnEach ", parameters$nEach,"\n" )
+  }
+  res
+}
+
+#' The actual function that does the running (BayesianLR.test is now a wrapper that runs this with ever-looser tolerances)
+#' @param truePos The number of true positive tests.
+#' @param totalPos The total number of positives ("sick") in the population.
+#' @param trueNeg The number of true negatives in the population.
+#' @param totalNeg The total number of negatives ("well") in the population.
+#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
+#' @param verbose Whether to display internal operations as they happen.
+#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
+#' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
+#' @return An object of class lrtest.
+run.BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
   # -- Check inputs -- #
   if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
   if( totalPos == 0 | totalNeg == 0 ) stop("This package may seem like magic, but not even magic will solve your problem (totalPos or totalNeg = 0).")
