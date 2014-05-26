@@ -2,7 +2,7 @@
 \alias{BayesianLR.test}
 \title{Compute the (positive/negative) likelihood ratio with appropriate, bootstrapped confidence intervals}
 \usage{
-  BayesianLR.test(truePos, totalPos, trueNeg, totalNeg,
+  BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg,
     R = 5 * 10^4, verbose = FALSE,
     parameters = list(shrink = 5, tol = 5e-04, nEach = 80),
     maxTries = 20, ...)
@@ -10,14 +10,14 @@
 \arguments{
   \item{truePos}{The number of true positive tests.}
 
-  \item{totalPos}{The total number of positives ("sick") in
-  the population.}
+  \item{totalDzPos}{The total number of positives ("sick")
+  in the population.}
 
   \item{trueNeg}{The number of true negatives in the
   population.}
 
-  \item{totalNeg}{The total number of negatives ("well") in
-  the population.}
+  \item{totalDzNeg}{The total number of negatives ("well")
+  in the population.}
 
   \item{R}{is the number of replications in each round of
   the bootstrap (has been tested at 50,000 or greater).}
@@ -60,13 +60,13 @@
   certain combinations of inputs.
 }
 \examples{
-blrt <- BayesianLR.test( truePos=100, totalPos=100, trueNeg=60, totalNeg=100 )
+blrt <- BayesianLR.test( truePos=100, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 blrt
 summary(blrt)
 \dontrun{
-BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=100 )
-BayesianLR.test( truePos=60, totalPos=100, trueNeg=100, totalNeg=100 )
-BayesianLR.test( truePos=60, totalPos=100, trueNeg=99, totalNeg=100 )
+BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
+BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=100, totalDzNeg=100 )
+BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=99, totalDzNeg=100 )
 # Note the argument names are not necessary if you specify them in the proper order:
 BayesianLR.test( 60, 100, 50, 50 )
 # You can specify R= to increase the number of bootstrap replications

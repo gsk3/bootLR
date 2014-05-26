@@ -2,19 +2,20 @@
 \alias{confusionStatistics}
 \title{Compute sensitivity, specificity, positive likelihood ratio, negative likelihood ratio for a single 2x2 table}
 \usage{
-  confusionStatistics(truePos, totalPos, trueNeg, totalNeg)
+  confusionStatistics(truePos, totalDzPos, trueNeg,
+    totalDzNeg)
 }
 \arguments{
   \item{truePos}{The number of true positive tests.}
 
-  \item{totalPos}{The total number of positives ("sick") in
-  the population.}
+  \item{totalDzPos}{The total number of positives ("sick")
+  in the population.}
 
   \item{trueNeg}{The number of true negatives in the
   population.}
 
-  \item{totalNeg}{The total number of negatives ("well") in
-  the population.}
+  \item{totalDzNeg}{The total number of negatives ("well")
+  in the population.}
 }
 \value{
   A one-row matrix containing sensitivity, specificity,

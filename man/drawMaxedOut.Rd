@@ -1,7 +1,7 @@
 \name{drawMaxedOut}
 \alias{drawMaxedOut}
 \title{Internal function to draw a set of sensitivities or specificities
-This is intended for the case where testPos == totalPos or testNeg == totalNeg.}
+This is intended for the case where testPos == totalDzPos or testNeg == totalDzNeg.}
 \usage{
   drawMaxedOut(n, R, verbose,
     parameters = list(shrink = 5, tol = 5e-04, nEach = 80))
@@ -22,6 +22,6 @@ This is intended for the case where testPos == totalPos or testNeg == totalNeg.}
 \description{
   Internal function to draw a set of sensitivities or
   specificities This is intended for the case where testPos
-  == totalPos or testNeg == totalNeg.
+  == totalDzPos or testNeg == totalDzNeg.
 }
 

@@ -2,22 +2,22 @@
 \alias{run.BayesianLR.test}
 \title{The actual function that does the running (BayesianLR.test is now a wrapper that runs this with ever-looser tolerances)}
 \usage{
-  run.BayesianLR.test(truePos, totalPos, trueNeg, totalNeg,
-    R = 5 * 10^4, verbose = FALSE,
+  run.BayesianLR.test(truePos, totalDzPos, trueNeg,
+    totalDzNeg, R = 5 * 10^4, verbose = FALSE,
     parameters = list(shrink = 5, tol = 5e-04, nEach = 80),
     ...)
 }
 \arguments{
   \item{truePos}{The number of true positive tests.}
 
-  \item{totalPos}{The total number of positives ("sick") in
-  the population.}
+  \item{totalDzPos}{The total number of positives ("sick")
+  in the population.}
 
   \item{trueNeg}{The number of true negatives in the
   population.}
 
-  \item{totalNeg}{The total number of negatives ("well") in
-  the population.}
+  \item{totalDzNeg}{The total number of negatives ("well")
+  in the population.}
 
   \item{R}{is the number of replications in each round of
   the bootstrap (has been tested at 50,000 or greater).}
