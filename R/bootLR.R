@@ -2,21 +2,21 @@
 
 #' Compute sensitivity, specificity, positive likelihood ratio, negative likelihood ratio for a single 2x2 table
 #' @param truePos The number of true positive tests.
-#' @param totalPos The total number of positives ("sick") in the population.
+#' @param totalDzPos The total number of positives ("sick") in the population.
 #' @param trueNeg The number of true negatives in the population.
-#' @param totalNeg The total number of negatives ("well") in the population.
+#' @param totalDzNeg The total number of negatives ("well") in the population.
 #' @return A one-row matrix containing sensitivity, specificity, posLR, negLR results.
 #' @references Deeks JJ, Altman DG. BMJ. 2004 July 17; 329(7458): 168-169.
 #' @examples
 #' \dontrun{
 #' confusionStatistics( 25, 50, 45, 75 )
 #' }
-confusionStatistics <- function( truePos, totalPos, trueNeg, totalNeg ) {
+confusionStatistics <- function( truePos, totalDzPos, trueNeg, totalDzNeg ) {
   n <- length(truePos)
   res <- matrix( NA, ncol=4, nrow=n )
   colnames(res) <- c("sens","spec","posLR","negLR")
-  res[,"sens"] <- truePos / totalPos
-  res[,"spec"] <- trueNeg / totalNeg
+  res[,"sens"] <- truePos / totalDzPos
+  res[,"spec"] <- trueNeg / totalDzNeg
   res[,"posLR"] <- res[,"sens"] / ( 1 - res[,"spec"] )
   res[,"negLR"] <- ( 1 - res[,"sens"] ) / res[,"spec"]
   res
@@ -87,36 +87,46 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 
 # ----- Main function and its helpers ----- #
 
-#' Compute the (negative) likelihood ratio with appropriate, bootstrapped confidence intervals
+#' Compute the (positive/negative) likelihood ratio with appropriate, bootstrapped confidence intervals
+#' 
+#' Compute the (positive/negative) likelihood ratio with appropriate, bootstrapped confidence intervals. 
+#' A standard bootstrapping approach is used for sensitivity and specificity, results are combined, and 
+#' then 95% CIs are determined. 
+#' For the case where sensitivity or specificity equals zero or one, an appropriate bootstrap sample is generated 
+#' and then used in subsequent computations.  
+#' 
+#' If the denominator is 0, calculations are inverted until the final result.
+#' 
 #' @param truePos The number of true positive tests.
-#' @param totalPos The total number of positives ("sick") in the population.
+#' @param totalDzPos The total number of positives ("sick") in the population.
 #' @param trueNeg The number of true negatives in the population.
-#' @param totalNeg The total number of negatives ("well") in the population.
+#' @param totalDzNeg The total number of negatives ("well") in the population.
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
-#' @param maxTries Each time a run fails, BayesianLR.test will back off on the parameters and try again. maxTries specifies the number of times to try before giving up.
+#' @param maxTries Each time a run fails, BayesianLR.test will back off on the parameters and try again. maxTries specifies the number of times to try before giving up.  If you can't get it to converge, try setting this higher.
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @return An object of class lrtest.
 #' @export BayesianLR.test
 #' @examples
-#' blrt <- BayesianLR.test( truePos=100, totalPos=100, trueNeg=60, totalNeg=100 )
+#' blrt <- BayesianLR.test( truePos=100, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 #' blrt
 #' summary(blrt)
 #' \dontrun{
-#' BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=100 )
-#' BayesianLR.test( truePos=60, totalPos=100, trueNeg=100, totalNeg=100 )
-#' BayesianLR.test( truePos=60, totalPos=100, trueNeg=99, totalNeg=100 )
+#' BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
+#' BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=100, totalDzNeg=100 )
+#' BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=99, totalDzNeg=100 )
 #' # Note the argument names are not necessary if you specify them in the proper order:
 #' BayesianLR.test( 60, 100, 50, 50 ) 
 #' # You can specify R= to increase the number of bootstrap replications
 #' BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
 #' }
-BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ... ) {
+#' @note This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
+BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ... ) {
   res <- structure(NULL,class="try-error")
   tries <- 1
   while( class(res) == "try-error"  &  tries < maxTries ) {
-    res <- try( run.BayesianLR.test(truePos, totalPos, trueNeg, totalNeg, R, verbose, parameters) )
+    res <- try( run.BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R, verbose, parameters) )
     parameters$tol <- ifelse( parameters$tol > .001, parameters$tol, .001 )
     parameters$shrink <- (parameters$shrink - 1) * .65 + 1
     parameters$nEach <- floor( parameters$nEach * 1.3 )
@@ -128,43 +138,43 @@ BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, ver
 
 #' The actual function that does the running (BayesianLR.test is now a wrapper that runs this with ever-looser tolerances)
 #' @param truePos The number of true positive tests.
-#' @param totalPos The total number of positives ("sick") in the population.
+#' @param totalDzPos The total number of positives ("sick") in the population.
 #' @param trueNeg The number of true negatives in the population.
-#' @param totalNeg The total number of negatives ("well") in the population.
+#' @param totalDzNeg The total number of negatives ("well") in the population.
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @return An object of class lrtest.
-run.BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
+run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
   # -- Check inputs -- #
   if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
-  if( totalPos == 0 | totalNeg == 0 ) stop("This package may seem like magic, but not even magic will solve your problem (totalPos or totalNeg = 0).")
-  if( trueNeg > totalNeg | truePos > totalPos ) stop("You cannot have more test positive/negative than you have total positive/negative.")
+  if( totalDzPos == 0 | totalDzNeg == 0 ) stop("This package may seem like magic, but not even magic will solve your problem (totalDzPos or totalDzNeg = 0).")
+  if( trueNeg > totalDzNeg | truePos > totalDzPos ) stop("You cannot have more test positive/negative than you have total positive/negative.")
   
   # -- Bootstrap sensitivity and specificity -- #
-  cs <- confusionStatistics( truePos=truePos, totalPos=totalPos, trueNeg=trueNeg, totalNeg=totalNeg )
+  cs <- confusionStatistics( truePos=truePos, totalDzPos=totalDzPos, trueNeg=trueNeg, totalDzNeg=totalDzNeg )
   csExact <- cs # store the actual confusion statistics, since we will use the lprb as a proxy for them at various points but we still want to report the real numbers at the end
   
   bootmean <- function(x,i)  mean(x[i])
   
-  if( truePos == totalPos ) {
-    sensb <- drawMaxedOut( n=totalPos, R=R, verbose=verbose )
+  if( truePos == totalDzPos ) {
+    sensb <- drawMaxedOut( n=totalDzPos, R=R, verbose=verbose )
     cs[,"sens"] <- attr(sensb,"lprb")
   } else {
     sensb <- boot(
-      rep( 1:0, c( truePos, totalPos-truePos ) ), 
+      rep( 1:0, c( truePos, totalDzPos-truePos ) ), 
       bootmean, 
       R=R
     )$t
   }
   
-  if( trueNeg == totalNeg ) {
-    specb <- drawMaxedOut( n=totalNeg, R=R, verbose=verbose, parameters=parameters )
+  if( trueNeg == totalDzNeg ) {
+    specb <- drawMaxedOut( n=totalDzNeg, R=R, verbose=verbose, parameters=parameters )
     cs[,"spec"] <- attr(specb,"lprb")
   } else {
     specb <- boot(
-      rep( 1:0, c( trueNeg, totalNeg-trueNeg ) ), 
+      rep( 1:0, c( trueNeg, totalDzNeg-trueNeg ) ), 
       bootmean, 
       R=R
     )$t
@@ -192,7 +202,7 @@ run.BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4,
     negLR.ci = negLR.ci,
     posLR = posLRexact,
     posLR.ci = posLR.ci,
-    inputs = structure( c( truePos, totalPos, trueNeg, totalNeg ), names=c("truePos","totalPos","trueNeg","totalNeg") ),
+    inputs = structure( c( truePos, totalDzPos, trueNeg, totalDzNeg ), names=c("truePos","totalDzPos","trueNeg","totalDzNeg") ),
     statistics = cs[ , c("sens","spec") ]
   ), 
   class = "lrtest",
@@ -202,7 +212,7 @@ run.BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4,
 }
 
 #' Internal function to draw a set of sensitivities or specificities
-#' This is intended for the case where testPos == totalPos or testNeg == totalNeg.
+#' This is intended for the case where testPos == totalDzPos or testNeg == totalDzNeg.
 #' @param n The total number of positives/negatives in the population.
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
 #' @param verbose Whether to display internal operations as they happen.
