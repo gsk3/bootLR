@@ -95,6 +95,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
+#' @param maxTries Each time a run fails, BayesianLR.test will back off on the parameters and try again. maxTries specifies the number of times to try before giving up.
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @return An object of class lrtest.
 #' @export BayesianLR.test
@@ -111,15 +112,14 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' # You can specify R= to increase the number of bootstrap replications
 #' BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
 #' }
-BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
-  maxTries <- 10
+BayesianLR.test <- function( truePos, totalPos, trueNeg, totalNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ... ) {
   res <- structure(NULL,class="try-error")
   tries <- 1
   while( class(res) == "try-error"  &  tries < maxTries ) {
     res <- try( run.BayesianLR.test(truePos, totalPos, trueNeg, totalNeg, R, verbose, parameters) )
-    parameters$tol <- parameters$tol * 2
-    parameters$shrink <- (parameters$shrink - 1) * .75 + 1
-    parameters$nEach <- parameters$nEach + 40
+    parameters$tol <- ifelse( parameters$tol > .001, parameters$tol, .001 )
+    parameters$shrink <- (parameters$shrink - 1) * .65 + 1
+    parameters$nEach <- floor( parameters$nEach * 1.3 )
     tries <- tries + 1
     if( verbose )  message("Failed to reach convergence in trial number ", tries-1, ".\nRunning trial number ", tries, " to see if we can reach convergence. New parameters: \nShrink ", parameters$shrink, "\nTolerance ", parameters$tol, "\nnEach ", parameters$nEach,"\n" )
   }
