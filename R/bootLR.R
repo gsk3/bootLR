@@ -67,7 +67,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
   if( any(is.na(fx)) ) stop("NAs produced while evaluating f")
   cx <- constraint( x, ... )
   if( any(is.na(cx)) ) stop("NAs produced while evaluating constraint")
-  if( !any(cx) ) stop("No value found while searching between",bounds[1],"and",bounds[2],". Try setting a looser tolerance, a lower shrinkage value, or a higher number for nEach.\n")
+  if( !any(cx) ) stop("No value found while searching between ",bounds[1], " and ",bounds[2],". Try setting a looser tolerance, a lower shrinkage value, or a higher number for nEach.\n")
   newVal <- x[ which( fx==min( fx[cx] ) ) ] #! Not very efficient
   if(verbose) cat("Newval found as:", newVal,", producing value",f(newVal),"\n")
   if( exists("lastVal") && abs(f(newVal)-f(lastVal))<tol ) { # Successive rounds within tolerance
@@ -123,15 +123,17 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' }
 #' @note This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
 BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ... ) {
-  res <- structure(NULL,class="try-error")
+  convergeFailText <- "try setting a looser tolerance, a lower shrinkage value, or a higher number for neach" # Error text that indicates a failure of convergence
+  res <- structure(NULL,class="try-error",condition=convergeFailText)
   tries <- 1
   while( class(res) == "try-error"  &  tries < maxTries ) {
+    if( verbose & tries > 1 )  message("Failed to reach convergence in trial number ", tries-1, ".\nRunning trial number ", tries, " to see if we can reach convergence. New parameters: \nShrink ", parameters$shrink, "\nTolerance ", parameters$tol, "\nnEach ", parameters$nEach,"\n" )
     res <- try( run.BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R, verbose, parameters) )
+    if( class(res) == "try-error"  &&  !grepl( convergeFailText, tolower( as.character( attributes(res)$condition ) ) ) )  stop( as.character( attributes(res)$condition ) )
     parameters$tol <- ifelse( parameters$tol > .001, parameters$tol, .001 )
     parameters$shrink <- (parameters$shrink - 1) * .65 + 1
     parameters$nEach <- floor( parameters$nEach * 1.3 )
-    tries <- tries + 1
-    if( verbose )  message("Failed to reach convergence in trial number ", tries-1, ".\nRunning trial number ", tries, " to see if we can reach convergence. New parameters: \nShrink ", parameters$shrink, "\nTolerance ", parameters$tol, "\nnEach ", parameters$nEach,"\n" )
+    tries <- tries + 1    
   }
   res
 }
