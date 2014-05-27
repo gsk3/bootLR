@@ -108,7 +108,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @return An object of class lrtest.
 #' @export BayesianLR.test
-#' @importFrom boot boot
+#' @imports boot
 #' @examples
 #' blrt <- BayesianLR.test( truePos=100, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 #' blrt
@@ -148,6 +148,7 @@ BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4,
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
+#' @imports boot
 #' @return An object of class lrtest.
 run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
   # -- Check inputs -- #
@@ -165,7 +166,7 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
     sensb <- drawMaxedOut( n=totalDzPos, R=R, verbose=verbose )
     cs[,"sens"] <- attr(sensb,"lprb")
   } else {
-    sensb <- boot(
+    sensb <- boot::boot(
       rep( 1:0, c( truePos, totalDzPos-truePos ) ), 
       bootmean, 
       R=R
@@ -176,7 +177,7 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
     specb <- drawMaxedOut( n=totalDzNeg, R=R, verbose=verbose, parameters=parameters )
     cs[,"spec"] <- attr(specb,"lprb")
   } else {
-    specb <- boot(
+    specb <- boot::boot(
       rep( 1:0, c( trueNeg, totalDzNeg-trueNeg ) ), 
       bootmean, 
       R=R
@@ -244,13 +245,14 @@ drawMaxedOut <- function( n, R, verbose, parameters=list(shrink=5,tol=.0005,nEac
 #' @param t The vector to obtain a BCa bootstrap for (e.g. nlr).
 #' @param t0 The central value of the vector (e.g. the ).
 #' @param \dots Pass-alongs to boot.ci.
+#' @imports boot
 bca <- function( t, t0, ... ) {
   R <- length(t)
   dummy <- rep(1:0,c(5,5)) # Doesn't matter what values are given here, since we're replacing them
-  dummyb <- boot(dummy, function(x,i) 1, R=R)
+  dummyb <- boot::boot(dummy, function(x,i) 1, R=R)
   dummyb$t <- matrix(t,ncol=1)
   dummyb$t0 <- t0
-  boot.ci(dummyb, t0=dummyb$t0, t=dummyb$t, type=c("perc", "bca"), ...)
+  boot::boot.ci(dummyb, t0=dummyb$t0, t=dummyb$t, type=c("perc", "bca"), ...)
 }
 
 # ----- Functions to display the resulting lrtest object ----- #
