@@ -18,6 +18,7 @@
 context( "Optimization works" )
 
 test_that( "Optimization test 1: simple quadratic with simple inequality", {
+  set.seed(100)
   f <- function(x) x^2
   b <- function(x) x>5
   res <- sequentialGridSearch( f=f, constraint=b, bounds=c(0,20), verbose=TRUE )

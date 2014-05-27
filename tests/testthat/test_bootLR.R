@@ -17,14 +17,14 @@
 context( "Inputs are validated" )
 
 test_that( "totalNeg or totalPos == 0", {
-  expect_error( BayesianLR.test( truePos=98, totalPos=0, trueNeg=60, totalNeg=100 ) )
-  expect_error( BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=0 ) )
+  expect_error( BayesianLR.test( truePos=98, totalDzPos=0, trueNeg=60, totalDzNeg=100 ) )
+  expect_error( BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=0 ) )
 } )
 
 
 test_that( "trueNeg or truePos greater than than totalNeg or totalPos", {
-  expect_error( BayesianLR.test( truePos=98, totalPos=95, trueNeg=60, totalNeg=100 ) )
-  expect_error( BayesianLR.test( truePos=98, totalPos=100, trueNeg=60, totalNeg=55 ) )
+  expect_error( BayesianLR.test( truePos=98, totalDzPos=95, trueNeg=60, totalDzNeg=100 ) )
+  expect_error( BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=55 ) )
 } )
 
 
@@ -33,6 +33,6 @@ context( "Output is as expected" )
 
 test_that( "Sens 100/100 and Spec 60/100", {
   set.seed(1235425)
-  res <- BayesianLR.test( truePos=100, totalPos=100, trueNeg=60, totalNeg=100 )
+  res <- BayesianLR.test( truePos=100, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
   expect_true( res$negLR.ci[2] < 0.0564 & res$negLR.ci[2] >0.0404 )
 } )
