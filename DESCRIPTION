@@ -2,7 +2,7 @@ Package: bootLR
 Type: Package
 Title: Bootstrapped confidence intervals for (negative) likelihood ratio tests
 Version: 0.9
-Date: 2013-12-18
+Date: 2014-5-26
 Author: Keith A. Marill and Ari B. Friedman
 Maintainer: Ari B. Friedman <abfriedman@gmail.com>
 Description: This package computes appropriate confidence intervals for the
@@ -12,7 +12,7 @@ Description: This package computes appropriate confidence intervals for the
     see epicalc::lrtest.
 License: LGPL-2.1
 LazyData: TRUE
-Depends:
+Imports:
     boot
 Suggests:
     testthat
