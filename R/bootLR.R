@@ -126,13 +126,13 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
 #' }
 #' @note This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
-BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ci.width = 0.95, consistentQuantile = consistentQuantile, ... ) {
+BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ci.width = 0.95, consistentQuantile = 0.5, ... ) {
   convergeFailText <- "try setting a looser tolerance, a lower shrinkage value, or a higher number for neach" # Error text that indicates a failure of convergence
   res <- structure(NULL,class="try-error",condition=convergeFailText)
   tries <- 1
   while( class(res) == "try-error"  &  tries < maxTries ) {
     if( verbose & tries > 1 )  message("Failed to reach convergence in trial number ", tries-1, ".\nRunning trial number ", tries, " to see if we can reach convergence. New parameters: \nShrink ", parameters$shrink, "\nTolerance ", parameters$tol, "\nnEach ", parameters$nEach,"\n" )
-    res <- try( run.BayesianLR.test(truePos = truePos, totalDzPos = totalDzPos, trueNeg = trueNeg, totalDzNeg = totalDzNeg, R = R, verbose = verbose, parameters = parameters, ci.width = ci.width, consistentQuantile = consistentQuantile) )
+    res <- try( run.BayesianLR.test( truePos = truePos, totalDzPos = totalDzPos, trueNeg = trueNeg, totalDzNeg = totalDzNeg, R = R, verbose = verbose, parameters = parameters, ci.width = ci.width, consistentQuantile = consistentQuantile ) )
     if( class(res) == "try-error"  &&  !grepl( convergeFailText, tolower( as.character( attributes(res)$condition ) ) ) )  stop( as.character( attributes(res)$condition ) )
     parameters$tol <- ifelse( parameters$tol > .001, parameters$tol, .001 )
     parameters$shrink <- (parameters$shrink - 1) * .65 + 1
@@ -155,7 +155,7 @@ BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4,
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @imports boot
 #' @return An object of class lrtest.
-run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ci.width = 0.95, consistentQuantile = consistentQuantile, ... ) {
+run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ci.width = 0.95, consistentQuantile = 0.5, ... ) {
   # -- Check inputs -- #
   if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
   if( totalDzPos == 0 | totalDzNeg == 0 ) stop("This package may seem like magic, but not even magic will solve your problem (totalDzPos or totalDzNeg = 0).")
@@ -229,6 +229,9 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
 #' @param method Either "deterministic" or "search". The former is faster and more accurate. Thanks to an anonymous reviewer for pointing out the utility of the binomial distribution in solving this problem.
 drawMaxedOut <- function( n, R, consistentQuantile = 0.5, verbose, parameters=list(shrink=5,tol=.0005,nEach=80), method = "deterministic" ) {
+  # Type checking
+  if( class(consistentQuantile) != "numeric" | consistentQuantile > 1 | consistentQuantile < 0 )  stop("consistentQuantile must be a decimal number between 0 and 1")
+  # Find lowest probability that consistently produces 1's, where "consistently" is defined by consistentQuantile
   if( method == "search" ) {
     lprb <- sequentialGridSearch( # lowest probability that consistently produces 1's 
       f=identity, # We just want to minimize pr
@@ -244,6 +247,10 @@ drawMaxedOut <- function( n, R, consistentQuantile = 0.5, verbose, parameters=li
   else if( method == "deterministic" ) {
     lprb <- exp( log( consistentQuantile ) / n )
   }
+  else {
+    stop("Method",method,"not supported")
+  }
+  # Draw samples based on this probability and return result
   res <- rbinom(R, size=n, prob=lprb)/n
   attr( res, "lprb" ) <- lprb
   res
