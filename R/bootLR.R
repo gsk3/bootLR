@@ -31,6 +31,7 @@ confusionStatistics <- function( truePos, totalDzPos, trueNeg, totalDzNeg ) {
 #' @param R number of bootstrap replications.
 #' @param nConsistentRuns Number of runs that all have to be identical to return TRUE.
 #' @param warn Warn if searching outside of the range c(0,1).
+#' @param consistentQuantile Defaults to 0.5 (the median). Change if we want to use a different criterion for consistency than the median
 #' @return Boolean of length one (TRUE or FALSE).
 #' @examples
 #' \dontrun{
@@ -38,12 +39,12 @@ confusionStatistics <- function( truePos, totalDzPos, trueNeg, totalDzNeg ) {
 #' bools <- sapply( prs, medianConsistentlyOne, size=truePos, R=R )
 #' data.frame( prs, bools )
 #' }
-medianConsistentlyOne <- function(pr, size, R, nConsistentRuns=5, warn=TRUE) {
+medianConsistentlyOne <- function(pr, size, R, nConsistentRuns=5, warn=TRUE, consistentQuantile = 0.5) {
   if( 0 > pr | pr > 1) {
     if(warn)  warning("Searching probabilities outside of 0,1. Returning FALSE.")
     return( FALSE )
   } else {
-    reps <- replicate( nConsistentRuns, median( rbinom(R, size=size, prob=pr) ) )
+    reps <- replicate( nConsistentRuns, quantile( rbinom(R, size=size, prob=pr), probs = consistentQuantile, names = FALSE, type = 8 ) )
     return( all( reps==size ) )
   }
 }
@@ -221,19 +222,26 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
 #' This is intended for the case where testPos == totalDzPos or testNeg == totalDzNeg.
 #' @param n The total number of positives/negatives in the population.
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
+#' @param consistentQuantile Defaults to 0.5, i.e. the median. Finds the lowest probability for which the random draws are likely to be consistently one, where consistently is defined by this value (i.e. at .5, a simple majority of the time is enough for consistency)
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
-drawMaxedOut <- function( n, R, verbose, parameters=list(shrink=5,tol=.0005,nEach=80) ) {
-  lprb <- sequentialGridSearch( # lowest probability that consistently produces 1's 
-    f=identity, # We just want to minimize pr
-    constraint=function(probs,...) vapply( probs, FUN=medianConsistentlyOne, FUN.VALUE=NA, ... ),
-    bounds=c(0,1), 
-    verbose=verbose,
-    size=n, R=R, warn=FALSE,
-    shrink=parameters$shrink,
-    tol=parameters$tol,
-    nEach=parameters$nEach
-  )
+#' @param method Either "deterministic" or "search". The former is faster and more accurate. Thanks to an anonymous reviewer for pointing out the utility of the binomial distribution in solving this problem.
+drawMaxedOut <- function( n, R, consistentQuantile = 0.5, verbose, parameters=list(shrink=5,tol=.0005,nEach=80), method = "deterministic" ) {
+  if( method == "search" ) {
+    lprb <- sequentialGridSearch( # lowest probability that consistently produces 1's 
+      f=identity, # We just want to minimize pr
+      constraint=function(probs,...) vapply( probs, FUN=medianConsistentlyOne, FUN.VALUE=NA, consistentQuantile = consistentQuantile, ... ),
+      bounds=c(0,1), 
+      verbose=verbose,
+      size=n, R=R, warn=FALSE,
+      shrink=parameters$shrink,
+      tol=parameters$tol,
+      nEach=parameters$nEach
+    )
+  }
+  else if( method == "deterministic" ) {
+    lprb <- exp( log( consistentQuantile ) / n )
+  }
   res <- rbinom(R, size=n, prob=lprb)/n
   attr( res, "lprb" ) <- lprb
   res
