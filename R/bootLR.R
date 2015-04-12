@@ -105,6 +105,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
 #' @param maxTries Each time a run fails, BayesianLR.test will back off on the parameters and try again. maxTries specifies the number of times to try before giving up.  If you can't get it to converge, try setting this higher.
+#' @param ci.width The width of the confidence interval used by boot.ci (not necessarily the same as the width of the CI produced by the algorithm overall; if this parameter is changed, results are not tested)
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @return An object of class lrtest.
 #' @export BayesianLR.test
@@ -123,7 +124,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
 #' }
 #' @note This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
-BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ... ) {
+BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ci.width = 0.95, ... ) {
   convergeFailText <- "try setting a looser tolerance, a lower shrinkage value, or a higher number for neach" # Error text that indicates a failure of convergence
   res <- structure(NULL,class="try-error",condition=convergeFailText)
   tries <- 1
@@ -147,10 +148,11 @@ BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4,
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
+#' @param ci.width The width of the confidence interval used by boot.ci (not necessarily the same as the width of the CI produced by the algorithm overall; if this parameter is changed, results are not tested)
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @imports boot
 #' @return An object of class lrtest.
-run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ... ) {
+run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ci.width = 0.95, ... ) {
   # -- Check inputs -- #
   if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
   if( totalDzPos == 0 | totalDzNeg == 0 ) stop("This package may seem like magic, but not even magic will solve your problem (totalDzPos or totalDzNeg = 0).")
@@ -160,7 +162,7 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
   cs <- confusionStatistics( truePos=truePos, totalDzPos=totalDzPos, trueNeg=trueNeg, totalDzNeg=totalDzNeg )
   csExact <- cs # store the actual confusion statistics, since we will use the lprb as a proxy for them at various points but we still want to report the real numbers at the end
   
-  bootmean <- function(x,i)  mean(x[i])
+  bootmean <- function(x,i)  mean( x[i] )
   
   if( truePos == totalDzPos ) {
     sensb <- drawMaxedOut( n=totalDzPos, R=R, verbose=verbose )
@@ -188,16 +190,16 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
   negLR <- unname( ( 1 - cs[,"sens"] ) / cs[,"spec"]  )
   negLRexact <- unname( ( 1-csExact[,"sens"] ) / csExact[,"spec"] ) # Could also just use csExact[,"negLR"] here, but not in the line above it
   if( all( specb != 0L ) ) {
-    negLR.ci <- bca( ( 1 - sensb) / specb, negLR, ... )$bca[4:5]
+    negLR.ci <- bca( ( 1 - sensb) / specb, negLR, conf = ci.width, ... )$bca[4:5]
   } else {
-    negLR.ci <- 1/bca( specb / ( 1 - sensb), 1/negLR, ... )$bca[c(4,5)]
+    negLR.ci <- 1/bca( specb / ( 1 - sensb), 1/negLR, conf = ci.width, ... )$bca[c(4,5)]
   }
   posLR <- unname( cs[,"sens"] / ( 1 - cs[,"spec"] ) )
   posLRexact <- unname( csExact[,"sens"] / ( 1 - csExact[,"spec"] ) )
   if( all( specb != 1L ) ) {
-    posLR.ci <- bca( sensb / ( 1 - specb ), posLR, ... )$bca[4:5]
+    posLR.ci <- bca( sensb / ( 1 - specb ), posLR, conf = ci.width, ... )$bca[4:5]
   } else {
-    posLR.ci <- 1/bca( ( 1 - specb ) / sensb, 1/posLR, ... )$bca[c(5,4)] # Reversed because the order inverts when you take the reciprocal
+    posLR.ci <- 1/bca( ( 1 - specb ) / sensb, 1/posLR, conf = ci.width, ... )$bca[c(5,4)] # Reversed because the order inverts when you take the reciprocal
   }
   
   # -- Return lrtest object -- #
@@ -211,7 +213,7 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
   ), 
   class = "lrtest",
   ci.type = "BCa",
-  ci.width = .95
+  ci.width = ci.width
   )
 }
 
