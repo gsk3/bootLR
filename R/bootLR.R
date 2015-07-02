@@ -119,12 +119,16 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 #' BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=100, totalDzNeg=100 )
 #' BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=99, totalDzNeg=100 )
+#' 
 #' # Note the argument names are not necessary if you specify them in the proper order:
 #' BayesianLR.test( 60, 100, 50, 50 ) 
+#' 
 #' # You can specify R= to increase/decrease the number of bootstrap replications
 #' BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
+#' 
 #' # You can change the number of digits that are printed
 #' print.lrtest( BayesianLR.test( 500, 500, 300, 500 ), digits = 4 )
+#' 
 #' # Or extract the results yourself
 #' model.blrt1 <- BayesianLR.test( 500, 500, 300, 500 )
 #' unclass( model.blrt1 )
@@ -137,7 +141,8 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' ### Statistician-only options: Change the way the model works. Not recommended, as this will alter the statistical properties of the test in ways that have not been validated.
 #' # Change number of bootstrap replications
 #' BayesianLR.test( 500, 500, 300, 500, R = 5*10^5 )
-#' 
+#' # Change the criteria from median being consistent 0 or 1 to some other quantile
+#' BayesianLR.test( 500, 500, 300, 500, consistentQuantile = .53 )
 #' }
 #' @note This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
 BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ci.width = 0.95, consistentQuantile = 0.5, ... ) {

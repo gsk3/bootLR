@@ -55,10 +55,30 @@ summary(blrt)
 BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=100, totalDzNeg=100 )
 BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=99, totalDzNeg=100 )
+
 # Note the argument names are not necessary if you specify them in the proper order:
 BayesianLR.test( 60, 100, 50, 50 )
+
 # You can specify R= to increase/decrease the number of bootstrap replications
 BayesianLR.test( 60, 100, 50, 50, R=10000 )
+
+# You can change the number of digits that are printed
+print.lrtest( BayesianLR.test( 500, 500, 300, 500 ), digits = 4 )
+
+# Or extract the results yourself
+model.blrt1 <- BayesianLR.test( 500, 500, 300, 500 )
+unclass( model.blrt1 )
+model.blrt1$statistics
+model.blrt1$posLR.ci
+
+# If the model doesn't converge, you can alter the search parameters
+BayesianLR.test( 500, 500, 300, 500, parameters=list(shrink=4,tol=.001,nEach=150), maxTries = 50 )
+
+### Statistician-only options: Change the way the model works. Not recommended, as this will alter the statistical properties of the test in ways that have not been validated.
+# Change number of bootstrap replications
+BayesianLR.test( 500, 500, 300, 500, R = 5*10^5 )
+# Change the criteria from median being consistent 0 or 1 to some other quantile
+BayesianLR.test( 500, 500, 300, 500, consistentQuantile = .53 )
 }
 }
 
