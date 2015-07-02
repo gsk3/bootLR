@@ -2,7 +2,7 @@
 % Please edit documentation in R/bootLR.R
 \name{run.BayesianLR.test}
 \alias{run.BayesianLR.test}
-\title{The actual function that does the running (BayesianLR.test is now a wrapper that runs this with ever-looser tolerances)}
+\title{The actual function that runs the test. BayesianLR.test is a wrapper that runs this with ever-looser tolerances.}
 \usage{
 run.BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 5 * 10^4,
   verbose = FALSE, parameters = list(shrink = 5, tol = 5e-04, nEach = 80),
@@ -33,6 +33,6 @@ run.BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 5 * 10^4,
 An object of class lrtest.
 }
 \description{
-The actual function that does the running (BayesianLR.test is now a wrapper that runs this with ever-looser tolerances)
+The actual function that runs the test. BayesianLR.test is a wrapper that runs this with ever-looser tolerances.
 }
 

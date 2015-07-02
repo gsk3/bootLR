@@ -21,7 +21,7 @@ BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 5 * 10^4,
 
 \item{verbose}{Whether to display internal operations as they happen.}
 
-\item{parameters}{List of control parameters (shrink, tol, nEach) for sequential grid search.}
+\item{parameters}{List of control parameters (shrink, tol, nEach) for sequential search.}
 
 \item{maxTries}{Each time a run fails, BayesianLR.test will back off on the parameters and try again. maxTries specifies the number of times to try before giving up.  If you can't get it to converge, try setting this higher.}
 

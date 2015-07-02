@@ -5,10 +5,12 @@
 \title{Prints results from the BayesianLR.test
 As is typical for R, this is run automatically when you type in an object name, and is typically not run directly by the end-user.}
 \usage{
-\method{print}{lrtest}(x, ...)
+\method{print}{lrtest}(x, digits = 3, ...)
 }
 \arguments{
 \item{x}{The lrtest object created by BayesianLR.test.}
+
+\item{digits}{Number of digits to round to for display purposes}
 
 \item{\dots}{Pass-alongs (currently ignored).}
 }

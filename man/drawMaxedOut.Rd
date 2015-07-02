@@ -18,7 +18,7 @@ drawMaxedOut(n, R, consistentQuantile = 0.5, verbose,
 
 \item{verbose}{Whether to display internal operations as they happen.}
 
-\item{parameters}{List of control parameters (shrink, tol, nEach) for sequential grid search.}
+\item{parameters}{List of control parameters (shrink, tol, nEach) for sequential search.}
 
 \item{method}{Either "deterministic" or "search". The former is faster and more accurate. Thanks to an anonymous reviewer for pointing out the utility of the binomial distribution in solving this problem.}
 }

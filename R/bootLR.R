@@ -104,7 +104,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param totalDzNeg The total number of negatives ("well") in the population.
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
 #' @param verbose Whether to display internal operations as they happen.
-#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
+#' @param parameters List of control parameters (shrink, tol, nEach) for sequential search.
 #' @param maxTries Each time a run fails, BayesianLR.test will back off on the parameters and try again. maxTries specifies the number of times to try before giving up.  If you can't get it to converge, try setting this higher.
 #' @param ci.width Changing this parameter results in different properties than have been tested and is not recommended. The width of the confidence interval used by boot.ci (not necessarily the same as the width of the CI produced by the algorithm overall)
 #' @param consistentQuantile Changing this parameter results in different properties than have been tested and is not recommended. Defaults to 0.5, i.e. the median. Finds the lowest probability for which the random draws are likely to be consistently one, where consistently is defined by this value (i.e. at .5, a simple majority of the time is enough for consistency).
@@ -141,7 +141,7 @@ BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4,
   res
 }
 
-#' The actual function that does the running (BayesianLR.test is now a wrapper that runs this with ever-looser tolerances)
+#' The actual function that runs the test. BayesianLR.test is a wrapper that runs this with ever-looser tolerances.
 #' @param truePos The number of true positive tests.
 #' @param totalDzPos The total number of positives ("sick") in the population.
 #' @param trueNeg The number of true negatives in the population.
@@ -224,7 +224,7 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
 #' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
 #' @param consistentQuantile Defaults to 0.5, i.e. the median. Finds the lowest probability for which the random draws are likely to be consistently one, where consistently is defined by this value (i.e. at .5, a simple majority of the time is enough for consistency)
 #' @param verbose Whether to display internal operations as they happen.
-#' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
+#' @param parameters List of control parameters (shrink, tol, nEach) for sequential search.
 #' @param method Either "deterministic" or "search". The former is faster and more accurate. Thanks to an anonymous reviewer for pointing out the utility of the binomial distribution in solving this problem.
 drawMaxedOut <- function( n, R, consistentQuantile = 0.5, verbose, parameters=list(shrink=5,tol=.0005,nEach=80), method = "deterministic" ) {
   # Type checking
@@ -276,13 +276,13 @@ bca <- function( t, t0, ... ) {
 #' Prints results from the BayesianLR.test
 #' As is typical for R, this is run automatically when you type in an object name, and is typically not run directly by the end-user.
 #' @param x The lrtest object created by BayesianLR.test.
+#' @param digits Number of digits to round to for display purposes
 #' @param \dots Pass-alongs (currently ignored).
 #' @return Returns x unaltered.
 #' @method print lrtest
 #' @S3method print lrtest
 #' @export print.lrtest
-print.lrtest <- function( x, ... ) {
-  digits <- 3 # Number of digits to round to for display purposes
+print.lrtest <- function( x, digits = 3, ... ) {
   cat("\n")
   cat("Likelihood ratio test of a 2x2 table")
   cat("\n\n")
