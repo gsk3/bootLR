@@ -111,7 +111,6 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @return An object of class lrtest.
 #' @export BayesianLR.test
-#' @imports boot
 #' @examples
 #' blrt <- BayesianLR.test( truePos=100, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 #' blrt
@@ -153,7 +152,6 @@ BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4,
 #' @param ci.width The width of the confidence interval used by boot.ci (not necessarily the same as the width of the CI produced by the algorithm overall; if this parameter is changed, results are not tested)
 #' @param consistentQuantile Defaults to 0.5, i.e. the median. Finds the lowest probability for which the random draws are likely to be consistently one, where consistently is defined by this value (i.e. at .5, a simple majority of the time is enough for consistency). Changing this parameter results in different properties than have been tested and is not recommended.
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
-#' @imports boot
 #' @return An object of class lrtest.
 run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ci.width = 0.95, consistentQuantile = 0.5, ... ) {
   # -- Check inputs -- #
@@ -264,7 +262,6 @@ drawMaxedOut <- function( n, R, consistentQuantile = 0.5, verbose, parameters=li
 #' @param t The vector to obtain a BCa bootstrap for (e.g. nlr).
 #' @param t0 The central value of the vector (e.g. the ).
 #' @param \dots Pass-alongs to boot.ci.
-#' @imports boot
 bca <- function( t, t0, ... ) {
   R <- length(t)
   dummy <- rep(1:0,c(5,5)) # Doesn't matter what values are given here, since we're replacing them
