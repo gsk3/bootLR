@@ -123,6 +123,21 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' BayesianLR.test( 60, 100, 50, 50 ) 
 #' # You can specify R= to increase/decrease the number of bootstrap replications
 #' BayesianLR.test( 60, 100, 50, 50, R=10000 ) 
+#' # You can change the number of digits that are printed
+#' print.lrtest( BayesianLR.test( 500, 500, 300, 500 ), digits = 4 )
+#' # Or extract the results yourself
+#' model.blrt1 <- BayesianLR.test( 500, 500, 300, 500 )
+#' unclass( model.blrt1 )
+#' model.blrt1$statistics
+#' model.blrt1$posLR.ci
+#' 
+#' # If the model doesn't converge, you can alter the search parameters
+#' BayesianLR.test( 500, 500, 300, 500, parameters=list(shrink=4,tol=.001,nEach=150), maxTries = 50 )
+#' 
+#' ### Statistician-only options: Change the way the model works. Not recommended, as this will alter the statistical properties of the test in ways that have not been validated.
+#' # Change number of bootstrap replications
+#' BayesianLR.test( 500, 500, 300, 500, R = 5*10^5 )
+#' 
 #' }
 #' @note This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
 BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ci.width = 0.95, consistentQuantile = 0.5, ... ) {
@@ -282,6 +297,8 @@ bca <- function( t, t0, ... ) {
 #' @method print lrtest
 #' @S3method print lrtest
 #' @export print.lrtest
+#' @examples
+#' print.lrtest( BayesianLR.test( 500, 500, 300, 500 ), digits = 4 )
 print.lrtest <- function( x, digits = 3, ... ) {
   cat("\n")
   cat("Likelihood ratio test of a 2x2 table")
