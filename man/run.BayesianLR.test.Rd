@@ -4,7 +4,7 @@
 \alias{run.BayesianLR.test}
 \title{The actual function that runs the test. BayesianLR.test is a wrapper that runs this with ever-looser tolerances.}
 \usage{
-run.BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 5 * 10^4,
+run.BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 10^4,
   verbose = FALSE, parameters = list(shrink = 5, tol = 5e-04, nEach = 80),
   ci.width = 0.95, consistentQuantile = 0.5, ...)
 }
@@ -17,7 +17,7 @@ run.BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 5 * 10^4,
 
 \item{totalDzNeg}{The total number of negatives ("well") in the population.}
 
-\item{R}{is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).}
+\item{R}{is the number of replications in each round of the bootstrap (has been tested at 10,000 or greater).}
 
 \item{verbose}{Whether to display internal operations as they happen.}
 

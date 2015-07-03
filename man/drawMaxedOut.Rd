@@ -12,7 +12,7 @@ drawMaxedOut(n, R, consistentQuantile = 0.5, verbose,
 \arguments{
 \item{n}{The total number of positives/negatives in the population.}
 
-\item{R}{is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).}
+\item{R}{is the number of replications in each round of the bootstrap (has been tested at 10,000 or greater).}
 
 \item{consistentQuantile}{Defaults to 0.5, i.e. the median. Finds the lowest probability for which the random draws are likely to be consistently one, where consistently is defined by this value (i.e. at .5, a simple majority of the time is enough for consistency)}
 

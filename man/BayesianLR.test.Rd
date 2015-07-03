@@ -4,9 +4,10 @@
 \alias{BayesianLR.test}
 \title{Compute the (positive/negative) likelihood ratio with appropriate, bootstrapped confidence intervals}
 \usage{
-BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 5 * 10^4,
-  verbose = FALSE, parameters = list(shrink = 5, tol = 5e-04, nEach = 80),
-  maxTries = 20, ci.width = 0.95, consistentQuantile = 0.5, ...)
+BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 10^4,
+  nBSave = 50, verbose = FALSE, parameters = list(shrink = 5, tol = 5e-04,
+  nEach = 80), maxTries = 20, ci.width = 0.95, consistentQuantile = 0.5,
+  ...)
 }
 \arguments{
 \item{truePos}{The number of true positive tests.}
@@ -17,7 +18,9 @@ BayesianLR.test(truePos, totalDzPos, trueNeg, totalDzNeg, R = 5 * 10^4,
 
 \item{totalDzNeg}{The total number of negatives ("well") in the population.}
 
-\item{R}{is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).}
+\item{R}{The number of replications in each round of the bootstrap (has been tested at 10,000 or greater).}
+
+\item{nBSave}{The number of times to re-bootstrap the statistic and then average at the end to obtain confidence intervals (has been tested at 50).}
 
 \item{verbose}{Whether to display internal operations as they happen.}
 
@@ -76,7 +79,9 @@ BayesianLR.test( 500, 500, 300, 500, parameters=list(shrink=4,tol=.001,nEach=150
 
 ### Statistician-only options: Change the way the model works. Not recommended, as this will alter the statistical properties of the test in ways that have not been validated.
 # Change number of bootstrap replications
-BayesianLR.test( 500, 500, 300, 500, R = 5*10^5 )
+BayesianLR.test( 500, 500, 300, 500, R = 5*10^4 )
+# Change number of times to average the confidence interval limits at the end
+BayesianLR.test( 500, 500, 300, 500, nBSave = 100 )
 # Change the criteria from median being consistent 0 or 1 to some other quantile
 BayesianLR.test( 500, 500, 300, 500, consistentQuantile = .53 )
 }

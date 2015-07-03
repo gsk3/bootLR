@@ -102,7 +102,8 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @param totalDzPos The total number of positives ("sick") in the population.
 #' @param trueNeg The number of true negatives in the population.
 #' @param totalDzNeg The total number of negatives ("well") in the population.
-#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
+#' @param R The number of replications in each round of the bootstrap (has been tested at 10,000 or greater).
+#' @param nBSave The number of times to re-bootstrap the statistic and then average at the end to obtain confidence intervals (has been tested at 50).
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential search.
 #' @param maxTries Each time a run fails, BayesianLR.test will back off on the parameters and try again. maxTries specifies the number of times to try before giving up.  If you can't get it to converge, try setting this higher.
@@ -140,12 +141,15 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' 
 #' ### Statistician-only options: Change the way the model works. Not recommended, as this will alter the statistical properties of the test in ways that have not been validated.
 #' # Change number of bootstrap replications
-#' BayesianLR.test( 500, 500, 300, 500, R = 5*10^5 )
+#' BayesianLR.test( 500, 500, 300, 500, R = 5*10^4 )
+#' # Change number of times to average the confidence interval limits at the end
+#' BayesianLR.test( 500, 500, 300, 500, nBSave = 100 )
 #' # Change the criteria from median being consistent 0 or 1 to some other quantile
 #' BayesianLR.test( 500, 500, 300, 500, consistentQuantile = .53 )
 #' }
 #' @note This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
-BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ci.width = 0.95, consistentQuantile = 0.5, ... ) {
+BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=10^4, nBSave=50, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ci.width = 0.95, consistentQuantile = 0.5, ... ) {
+  # Run the algorithm once, expand criteria if it fails
   convergeFailText <- "try setting a looser tolerance, a lower shrinkage value, or a higher number for neach" # Error text that indicates a failure of convergence
   res <- structure(NULL,class="try-error",condition=convergeFailText)
   tries <- 1
@@ -158,6 +162,17 @@ BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4,
     parameters$nEach <- floor( parameters$nEach * 1.3 )
     tries <- tries + 1    
   }
+  # Now adjust the posLR and negLR CI's to be the average of nBSave runs of the bootstrap algorithm
+  if( verbose )  message("Adjusting CIs by averaging nBSave times.\n")
+  bsReps <- replicate( 
+    nBSave, 
+    unclass( run.BayesianLR.test( truePos = truePos, totalDzPos = totalDzPos, trueNeg = trueNeg, totalDzNeg = totalDzNeg, R = R, verbose = verbose, parameters = parameters, ci.width = ci.width, consistentQuantile = consistentQuantile ) ), 
+    simplify=FALSE 
+  )
+  for( v in c("negLR.ci","posLR.ci") ) {
+    res[[ v ]] <- apply( vapply( bsReps, function(x) x[[ v ]], FUN.VALUE = numeric(2) ), 1, mean )
+  }
+  # Return the result
   res
 }
 
@@ -166,16 +181,16 @@ BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4,
 #' @param totalDzPos The total number of positives ("sick") in the population.
 #' @param trueNeg The number of true negatives in the population.
 #' @param totalDzNeg The total number of negatives ("well") in the population.
-#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
+#' @param R is the number of replications in each round of the bootstrap (has been tested at 10,000 or greater).
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential grid search.
 #' @param ci.width The width of the confidence interval used by boot.ci (not necessarily the same as the width of the CI produced by the algorithm overall; if this parameter is changed, results are not tested)
 #' @param consistentQuantile Defaults to 0.5, i.e. the median. Finds the lowest probability for which the random draws are likely to be consistently one, where consistently is defined by this value (i.e. at .5, a simple majority of the time is enough for consistency). Changing this parameter results in different properties than have been tested and is not recommended.
 #' @param \dots Arguments to pass along to boot.ci for the BCa confidence intervals.
 #' @return An object of class lrtest.
-run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ci.width = 0.95, consistentQuantile = 0.5, ... ) {
+run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=10^4, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), ci.width = 0.95, consistentQuantile = 0.5, ... ) {
   # -- Check inputs -- #
-  if( R < 5*10^4 ) warning("Setting the number of bootstrap replications to a number lower than 50,000 may lead to unstable results")
+  if( R < 10^4 ) warning("Setting the number of bootstrap replications to a number lower than 10,000 may lead to unstable results")
   if( totalDzPos == 0 | totalDzNeg == 0 ) stop("This package may seem like magic, but not even magic will solve your problem (totalDzPos or totalDzNeg = 0).")
   if( trueNeg > totalDzNeg | truePos > totalDzPos ) stop("You cannot have more test positive/negative than you have total positive/negative.")
   
@@ -241,7 +256,7 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=5*1
 #' Internal function to draw a set of sensitivities or specificities
 #' This is intended for the case where testPos == totalDzPos or testNeg == totalDzNeg.
 #' @param n The total number of positives/negatives in the population.
-#' @param R is the number of replications in each round of the bootstrap (has been tested at 50,000 or greater).
+#' @param R is the number of replications in each round of the bootstrap (has been tested at 10,000 or greater).
 #' @param consistentQuantile Defaults to 0.5, i.e. the median. Finds the lowest probability for which the random draws are likely to be consistently one, where consistently is defined by this value (i.e. at .5, a simple majority of the time is enough for consistency)
 #' @param verbose Whether to display internal operations as they happen.
 #' @param parameters List of control parameters (shrink, tol, nEach) for sequential search.
@@ -313,6 +328,6 @@ print.lrtest <- function( x, digits = 3, ... ) {
   cat( paste0( "Positive LR: ", round(x$posLR,digits), " (", round(x$posLR.ci[1],digits), " - ", round(x$posLR.ci[2],digits), ")\n" ) )
   cat( paste0( "Negative LR: ", round(x$negLR,digits), " (", round(x$negLR.ci[1],digits), " - ", round(x$negLR.ci[2],digits), ")\n" ) )
   cat( paste0( attr(x,"ci.width")*100, "% confidence intervals computed via ", attr(x,"ci.type"), " bootstrapping.\n" ) )
-  cat( "Note: This procedure depends on repeated random sampling.  As such it is subject to some variability in results.\n  Variability is minimized by large numbers of replications (generally 50,000) [and averaging 5 repeated results],\n but with small sample sizes or sensitivity or specificity near 0 or 1, variability becomes more pronounced.\n  This is not an error, it is a function of the nature of the procedure." )
+  cat( "Note: This procedure depends on repeated random sampling.  As such it is subject to some variability in results.\n  Variability is minimized by large numbers of replications (generally 10,000) [and averaging 5 repeated results],\n but with small sample sizes or sensitivity or specificity near 0 or 1, variability becomes more pronounced.\n  This is not an error, it is a function of the nature of the procedure." )
   invisible(x)
 }
