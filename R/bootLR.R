@@ -325,9 +325,9 @@ print.lrtest <- function( x, digits = 3, ... ) {
   cat("\n\n")
   cat("data:\n")
   print(x$inputs)
-  cat( paste0( "Positive LR: ", round(x$posLR,digits), " (", round(x$posLR.ci[1],digits), " - ", round(x$posLR.ci[2],digits), ")\n" ) )
-  cat( paste0( "Negative LR: ", round(x$negLR,digits), " (", round(x$negLR.ci[1],digits), " - ", round(x$negLR.ci[2],digits), ")\n" ) )
+  cat( sprintf( paste0( "Positive LR: %01.", digits, "f (%01.", digits, "f - %01.", digits, "f)\n" ), x$posLR, x$posLR.ci[1], x$posLR.ci[2] ) )
+  cat( sprintf( paste0( "Negative LR: %01.", digits, "f (%01.", digits, "f - %01.", digits, "f)\n" ), x$negLR, x$negLR.ci[1], x$negLR.ci[2] ) )
   cat( paste0( attr(x,"ci.width")*100, "% confidence intervals computed via ", attr(x,"ci.type"), " bootstrapping.\n" ) )
-  cat( "Note: This procedure depends on repeated random sampling.  As such it is subject to some variability in results.\n  Variability is minimized by large numbers of replications (generally 10,000) [and averaging 5 repeated results],\n but with small sample sizes or sensitivity or specificity near 0 or 1, variability becomes more pronounced.\n  This is not an error, it is a function of the nature of the procedure." )
+  cat( "Note: This procedure depends on repeated random sampling.  As such it is subject to some variability in results.\n  Variability is minimized by large numbers of replications (typically 10,000), and averaging 5 repeated results,\n but with small sample sizes or sensitivity or specificity near 0 or 1, variability becomes more pronounced.\n  This is not an error, it is a function of the nature of the procedure." )
   invisible(x)
 }
