@@ -48,13 +48,14 @@ and then used in subsequent computations.
 If the denominator is 0, calculations are inverted until the final result.
 }
 \note{
-This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
+You'll either need a fast computer or substantial patience for certain combinations of inputs.
 }
 \examples{
+\dontrun{
 blrt <- BayesianLR.test( truePos=100, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 blrt
 summary(blrt)
-\dontrun{
+
 BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=100, totalDzNeg=100 )
 BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=99, totalDzNeg=100 )
@@ -77,7 +78,10 @@ model.blrt1$posLR.ci
 # If the model doesn't converge, you can alter the search parameters
 BayesianLR.test( 500, 500, 300, 500, parameters=list(shrink=4,tol=.001,nEach=150), maxTries = 50 )
 
-### Statistician-only options: Change the way the model works. Not recommended, as this will alter the statistical properties of the test in ways that have not been validated.
+### Statistician-only options
+# These change the way the model works.
+# It is not recommended to alter these, as this will alter the statistical properties of the test
+# in ways that have not been validated.
 # Change number of bootstrap replications
 BayesianLR.test( 500, 500, 300, 500, R = 5*10^4 )
 # Change number of times to average the confidence interval limits at the end

@@ -113,10 +113,11 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' @return An object of class lrtest.
 #' @export BayesianLR.test
 #' @examples
+#' \dontrun{
 #' blrt <- BayesianLR.test( truePos=100, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 #' blrt
 #' summary(blrt)
-#' \dontrun{
+#' 
 #' BayesianLR.test( truePos=98, totalDzPos=100, trueNeg=60, totalDzNeg=100 )
 #' BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=100, totalDzNeg=100 )
 #' BayesianLR.test( truePos=60, totalDzPos=100, trueNeg=99, totalDzNeg=100 )
@@ -150,7 +151,7 @@ sequentialGridSearch <- function( f, constraint, bounds, nEach=40, shrink=10, to
 #' # Change the criteria from median being consistent 0 or 1 to some other quantile
 #' BayesianLR.test( 500, 500, 300, 500, consistentQuantile = .53 )
 #' }
-#' @note This algorithm utilizes a sequential grid search.  You'll either need a fast computer or substantial patience for certain combinations of inputs.
+#' @note You'll either need a fast computer or substantial patience for certain combinations of inputs.
 BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=10^4, nBSave=50, verbose=FALSE, parameters=list(shrink=5,tol=.0005,nEach=80), maxTries = 20, ci.width = 0.95, consistentQuantile = 0.5, ... ) {
   # Run the algorithm once, expand criteria if it fails
   convergeFailText <- "try setting a looser tolerance, a lower shrinkage value, or a higher number for neach" # Error text that indicates a failure of convergence
@@ -321,7 +322,9 @@ bca <- function( t, t0, ... ) {
 #' @S3method print lrtest
 #' @export print.lrtest
 #' @examples
+#' \dontrun{
 #' print.lrtest( BayesianLR.test( 500, 500, 300, 500 ), digits = 4 )
+#' }
 print.lrtest <- function( x, digits = 3, ... ) {
   cat("\n")
   cat("Likelihood ratio test of a 2x2 table")
