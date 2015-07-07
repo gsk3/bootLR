@@ -44,7 +44,7 @@ medianConsistentlyOne <- function(pr, size, R, nConsistentRuns=5, warn=TRUE, con
     if(warn)  warning("Searching probabilities outside of 0,1. Returning FALSE.")
     return( FALSE )
   } else {
-    reps <- replicate( nConsistentRuns, quantile( rbinom(R, size=size, prob=pr), probs = consistentQuantile, names = FALSE, type = 8 ) )
+    reps <- replicate( nConsistentRuns, stats::quantile( stats::rbinom(R, size=size, prob=pr), probs = consistentQuantile, names = FALSE, type = 8 ) )
     return( all( reps==size ) )
   }
 }
@@ -288,7 +288,7 @@ drawMaxedOut <- function( n, R, consistentQuantile = 0.5, verbose, parameters=li
     stop("Method",method,"not supported")
   }
   # Draw samples based on this probability and return result
-  res <- rbinom(R, size=n, prob=lprb)/n
+  res <- stats::rbinom(R, size=n, prob=lprb)/n
   attr( res, "lprb" ) <- lprb
   res
 }
