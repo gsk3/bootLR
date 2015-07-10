@@ -319,8 +319,7 @@ bca <- function( t, t0, ... ) {
 #' @param \dots Pass-alongs (currently ignored).
 #' @return Returns x unaltered.
 #' @method print lrtest
-#' @S3method print lrtest
-#' @export print.lrtest
+#' @export
 #' @examples
 #' \dontrun{
 #' print.lrtest( BayesianLR.test( 500, 500, 300, 500 ), digits = 4 )
