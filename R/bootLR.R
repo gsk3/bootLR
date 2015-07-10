@@ -319,7 +319,6 @@ bca <- function( t, t0, ... ) {
 #' @param \dots Pass-alongs (currently ignored).
 #' @return Returns x unaltered.
 #' @method print lrtest
-#' @S3method print lrtest
 #' @export print.lrtest
 #' @examples
 #' \dontrun{
