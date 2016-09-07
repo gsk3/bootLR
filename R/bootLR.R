@@ -160,7 +160,7 @@ BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=10^4, n
   while( class(res) == "try-error"  &  tries < maxTries ) {
     if( verbose & tries > 1 )  message("Failed to reach convergence in trial number ", tries-1, ".\nRunning trial number ", tries, " to see if we can reach convergence. New parameters: \nShrink ", parameters$shrink, "\nTolerance ", parameters$tol, "\nnEach ", parameters$nEach,"\n" )
     res <- try( run.BayesianLR.test( truePos = truePos, totalDzPos = totalDzPos, trueNeg = trueNeg, totalDzNeg = totalDzNeg, R = R, verbose = verbose, parameters = parameters, ci.width = ci.width, consistentQuantile = consistentQuantile ) )
-    if( class(res) == "try-error"  &&  !grepl( convergeFailText, tolower( as.character( attributes(res)$condition ) ) ) )  stop( as.character( attributes(res)$condition ) )
+    if( class(res) == "try-error"  &&  !grepl( convergeFailText, tolower( as.character( attributes(res)$condition ) ) ) )  stop( as.character( attributes(res)$condition ) ) # Unless the error message captured indicates to try again with looser tolerances, fail and return the error message captured from run.BayesianLR.test
     parameters$tol <- ifelse( parameters$tol > .001, parameters$tol, .001 )
     parameters$shrink <- (parameters$shrink - 1) * .65 + 1
     parameters$nEach <- floor( parameters$nEach * 1.3 )
@@ -225,6 +225,10 @@ run.BayesianLR.test <- function( truePos, totalDzPos, trueNeg, totalDzNeg, R=10^
       R=R
     )$t
   }
+  
+  # Test that we don't have any cases where sensb and specb happen to both be 0/1 simultaneously
+  if( any(apply( data.frame( sensb, specb ), 1, function(x)  x[1] == 1 & x[2] == 0 )) )
+    stop("In some of your draws, sensitivity was 1 at the same time that specificity was 0. This most likely resulted because you had a sensitivity of 1 and a specificity of close to 0, or vice-versa. The algorithm is not designed to handle this case, and may not ever be. Please do not just re-run the algorithm until you no longer receive this message, as the confidence intervals so obtained will be invalid.")
   
   # -- Compute pos/neg LRs and their BCa confidence intervals -- #
   negLR <- unname( ( 1 - cs[,"sens"] ) / cs[,"spec"]  )
@@ -318,7 +322,7 @@ bca <- function( t, t0, ... ) {
 #' @param digits Number of digits to round to for display purposes
 #' @param \dots Pass-alongs (currently ignored).
 #' @return Returns x unaltered.
-#' @method print lrtest
+#' @method print lrtest 
 #' @export
 #' @examples
 #' \dontrun{

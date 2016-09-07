@@ -1,8 +1,8 @@
 Package: bootLR
 Type: Package
 Title: Bootstrapped Confidence Intervals for (Negative) Likelihood Ratio Tests
-Version: 1.0
-Date: 2015-07-10
+Version: 1.0.1
+Date: 2016-09-07
 Author: Keith A. Marill and Ari B. Friedman
 Maintainer: Ari B. Friedman <abfriedman@gmail.com>
 Description: Computes appropriate confidence intervals for the likelihood ratio tests commonly used in medicine/epidemiology.  It is particularly useful when the sensitivity or specificity in the sample is 100%.  Note that this does not perform the test on nested models--for that, see 'epicalc::lrtest'.
